@@ -92,8 +92,11 @@ The complex model achieves better results but is affected by a severe collineari
 At the end in the folder ```/app/output/``` will find the generated images, the estimated coefficients, and the html version of all the notebooks launched with any parameter.
 
 ## Output Example
-To see an example of the pipeline's output without pulling the repository you can check the folder ```/example-outcome```.
-To avoid data duplication on GitHub, the folder ```/example-outcome/data/``` does contain the raw data, which is already available in ```/data``` folder.
+To see an example of the pipeline's output without pulling the repository you can check the folder ```/example-outcome/```.
+To avoid data duplication on GitHub, the folder ```/example-outcome/data/``` does contain the raw data, which is already available in the ```/data/``` folder.
 
 ## Conduct your own data analysis
+TODO.
+
+## UPPAAL Model
 TODO.
