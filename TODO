@@ -1,0 +1,9 @@
+enable handling of parameters
+push to github the code
+publish the docker container & volume
+improve the log output of the main
+set user-privileges instead of root-privileges
+fix image vulnerabilities
+detail everything in readme
+detail in readme possible extensions for vs code users (html viewer, notebook simulator etc.)
+split last two notebooks in a separate function

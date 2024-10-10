@@ -1,0 +1,70 @@
+{
+    "prs feed_1 [kPa]": {
+        "x": [
+            "prs retentate est [kPa]"
+        ],
+        "intercept": 34.070694116168134,
+        "coefficients": [
+            0.9861295970035804
+        ]
+    },
+    "prs feed_2 [kPa]": {
+        "x": [
+            "prs retentate est [kPa]"
+        ],
+        "intercept": 260.1302191144803,
+        "coefficients": [
+            0.9957197518134062
+        ]
+    },
+    "flux slope": {
+        "x": [
+            "exp(-time) [m]"
+        ],
+        "intercept": 0.12514164604027705,
+        "coefficients": [
+            0.17857242209619312
+        ]
+    },
+    "prs permeate [kPa]": {
+        "x": null,
+        "intercept": 21.9727,
+        "coefficients": []
+    },
+    "flow retentate [L/h]": {
+        "x": [
+            "prs retentate est [kPa]"
+        ],
+        "intercept": 2837.4215267743875,
+        "coefficients": [
+            -6.487313275665691
+        ]
+    },
+    "flux min": {
+        "x": [
+            "flux at 20\u00b0 [L/m^2h]"
+        ],
+        "intercept": 15.90037586680282,
+        "coefficients": [
+            0.6724932503747343
+        ]
+    },
+    "res tot [1/m]": {
+        "x": [
+            "viscosity permeate [Pa s]"
+        ],
+        "intercept": 3364724378734.171,
+        "coefficients": [
+            -590102457248807.5
+        ]
+    },
+    "res tot [1/m] smooth 0.4": {
+        "x": [
+            "viscosity permeate [Pa s]"
+        ],
+        "intercept": 3375574879231.765,
+        "coefficients": [
+            -605060951837487.8
+        ]
+    }
+}

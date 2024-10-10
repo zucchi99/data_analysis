@@ -1,0 +1,8 @@
+{
+    "k_n=5.5e-6,n=0,flux_min=res,res_0=4e12.csv"    : "ALL_DATA.csv",
+    "k_n=5e-6,n=0,flux_min=res,res_0=3.3e12.csv"    : "ALL_DATA.csv",
+    "k_n=5e-6,n=0,flux_min=res,res_0=4e12.csv"      : "ALL_DATA.csv",
+    "k_n=5e-6,n=0,flux_min=res.csv"                 : "ALL_DATA.csv",
+    "k_n=5e-6,n=0.csv"                              : "ALL_DATA.csv",
+    "k_n=6e-6,n=0,flux_min=res,res_0=3.8e12.csv"    : "ALL_DATA.csv"
+}

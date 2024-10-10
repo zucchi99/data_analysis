@@ -1,0 +1,859 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE nta PUBLIC '-//Uppaal Team//DTD Flat System 1.6//EN' 'http://www.it.uu.se/research/group/darts/uppaal/flat-1_6.dtd'>
+<nta>
+	<declaration>
+urgent broadcast chan ASAP;
+
+// double v, f, df, dv, 
+// double delta_res;
+
+bool TESTING;
+
+// ---------------------------------------------------------------------
+
+// settings default select parameters
+const int UPDATE_INTERVAL =  5; // minutes
+const int SELECT_MIN      =  0; // bar
+const int SELECT_MAX      =  5; // bar
+const int SELECT_MUL      = 25; // bar
+
+// for TESTING purposes
+/*
+const int UPDATE_INTERVAL = 1;
+const int SELECT_MIN      = -100;
+const int SELECT_MAX      = 30;
+const int SELECT_MUL      = 5;
+*/
+
+// ---------------------------------------------------------------------
+// EXPERIMENTAL CONSTANTS
+
+/* 
+Hermia’s analysis to cross-flow filtration ==&gt; 4 possible fouling mechanism
+ - Complete pore blocking (n = 2)
+ - Partial pore blocking  (n = 1)
+ - Cake filtration (n = 0)
+ - Internal pore blocking (n = 1.5; J_lim = 0)
+*/
+
+double fouling_type_n;
+double pump_eff;
+
+// ---------------------------------------------------------------------
+
+// area of the membrane [m^2], constant given as input
+double AREA_TOT;
+
+// concentration [g / L]
+double conc_feed_0;
+// conc_feed = ((vol_feed_0 * conc_feed_0) - (vol_prmt * conc_prmt)) / vol_feed
+// derivable using quotient rule and knowing that d/dt vol_prmt = flow_prmt = - d/dt vol_feed
+// d/dt conc_feed = (flow_prmt / pow(vol_feed,2)) * (weight_feed_0 - conc_prmt * (vol_feed + vol_prmt))
+clock conc_feed; 
+clock conc_prmt = 0.3;
+
+// flow [L / h] = 1/1000 * [m^3 / h]
+// NB FLOW BALANCE: flow_feed = flow_rtnt + flow_prmt
+clock flow_feed; 
+double flow_rtnt; 
+clock  flow_prmt;
+
+// flux (permeate) [L / m^2 h] 
+// flux 		== prs_TMP / (viscosity * (res_mbn + res_foul))
+// flux'	   	== (- flux_slope * pow(flux, 2-N) * (flux - flux_min))
+clock  flux;
+double flux_min;
+clock  flux_slope;
+//double flux_slope_coeff = ;
+//double flux_slope_intercept = flux_slope_coeff + ;
+
+// Watt-second        [ Ws] = [W * s] = [kg * m^2 / s^2]
+// Kilo Watt-hour     [kWh] = [W * s / 1000 * 3600]
+// energy [kWh]
+clock energy_CP;
+clock energy_PP;
+// clock energy_tot; // = (energy_PP + energy_CP)
+
+// COST FUNCTION: energy_tot / vol_prmt [kWh / m^3]
+clock energy_per_m3;
+
+// pressure [kPa]
+const double PRS_TMP_MAX = 450.00;
+const double PRS_PRMT    =  21.9727;
+const double PRS_IN      =  10.00;
+// 0.5 * (- 260.0 + 2.0 * PRS_TMP_MAX + 2.0 * PRS_PRMT) = - 130 + PRS_TMP_MAX + PRS_PRMT
+const double PRS_RTNT_MIN = 10; // 0.1 [bar];
+const double PRS_RTNT_MAX = - 130 + PRS_TMP_MAX + PRS_PRMT;
+double prs_rtnt;  
+double prs_feed_1;
+double prs_feed_2;
+double prs_TMP;   
+double prs_TMP_delta;
+
+// resistance [1 / m]
+clock res_tot = 2.6680682628069688e12;
+
+// temperature [°C]
+bool FIXED_TEMPERATURE;
+const double MAX_TEMPERATURE = 50.0; 
+// temperature' = 3.85199    if (time_min &lt;= 2) ==&gt; jump to 15-19 °C if lower
+// temperature' = 0.12108152 if (time_min  &gt; 2)
+clock temperature; // [°C]
+// temperature_sqrt  = sqrt(temperature)
+// g(t): temperature at time t, f = sqrt ==&gt; chain rule: d/dt f(g(t)) = f'(g(t)) * g'(t)
+// temperature_sqrt' = 1 / (2 * sqrt(temperature)) * temperature'
+clock temperature_sqrt;
+
+// viscosity permeate [Pa s]
+// viscosity  = 0.0022436217635221486 + 1.49679781e-05 * temperature -3.45605183e-04 * temperature_sqrt
+// viscosity' = 1.49679781e-05 * temperature' - 3.45605183e-04 * temperature_sqrt'
+clock viscosity; // [Pa s]
+
+// volume [L]
+const double VOL_FEED_MAX = 150.0;
+const double VOL_FEED_MIN =  50.0;
+double vol_feed_0;
+clock vol_feed;
+clock vol_prmt;
+
+// weight [g]
+double weight_feed_0;
+// clock weight_prmt;
+// clock weight_feed;
+
+// ---------------------------------------------------------------------
+// TIME CLOCKS
+clock time_min = 0.0;
+clock time_hrs = 0.0;
+clock time_since_update = 0.0;
+
+// ------------------------------------------------------------------------------------------
+
+// UNIT MEASURE CONVERSIONS
+
+double hours__to__sec(double x) {
+    return x / 3600.0;
+}
+
+double hours__to__min(double x) {
+    return x / 60.0;
+}
+
+double liters__to__m3(double x) {
+    return x / 1000.0;
+}
+
+double L_h__to__m3_min(double flow) {
+    return liters__to__m3(hours__to__min(flow));
+}
+
+double L_h__to__m3_s(double flow) {
+    return liters__to__m3(hours__to__sec(flow));
+}
+
+
+double Pa_s__to__kPa_h(double viscosity) {
+    return viscosity / (1000.0 * 3600.0);
+}
+
+// ------------------------------------------------------------------------------------------
+
+double dt__energy_CP() {
+    // [kW]  = [kg * m^2 / s^2 * min * 1000]
+    // [kW]  = [m^3 / min]                         * [kg / s^2 * m * 1000]
+    // return L_h__to__m3_min(flow_rtnt)              * (prs_feed_2 - prs_feed_1) / pump_eff;
+
+
+    // [kW]  = [kg * m^2 / s^3 * 1000]
+    // [kW]  = [m^3 / s]                         * [kg / s^2 * m * 1000]
+    // return (L_h__to__m3_min(flow_rtnt) * (prs_feed_2 - prs_rtnt)) / (3600.0 * pump_eff);
+    return (L_h__to__m3_s(flow_rtnt + flow_prmt) * (prs_feed_2 - prs_feed_1)) / (pump_eff);
+} 
+
+double dt__energy_PP() {
+    // [kW]  = [kg * m^2 / s^2 * min * 1000]
+    // [kW]  = [m^3 / min]                        * [kg / s^2 * m * 1000]
+    // return L_h__to__m3_min(flow_rtnt + flow_prmt) * (prs_feed_1 - PRS_IN)      / pump_eff;
+    // return L_h__to__m3_min(flow_prmt) * (prs_feed_1 - PRS_IN) / (3600.0 * pump_eff);
+    return L_h__to__m3_s(flow_rtnt + flow_prmt) * (prs_feed_1 - PRS_IN) / (pump_eff);
+}
+double dt__conc_feed() {
+    // for batch systems: total volume is fixed and finite ==&gt; d/dt vol_feed == - d/dt vol_prmt == flow_prmt
+    // [g/L*min] = [L/min]   * [L]        * [g/L]                     / [L^2]
+    // derived from: vol_feed_0 * conc_feed_0 = vol_feed * conc_feed + vol_prmt * conc_prmt
+    // assuming: conc_prmt constant
+    return hours__to__min(flow_prmt) * vol_feed_0 * (conc_feed_0 - conc_prmt) / pow(vol_feed,2);
+    // for continous-stream: total volume is infinite, the tank has always same level ==&gt; d/dt vol_feed = 0
+    // return - hours__to__min(flow_prmt) * conc_prmt / vol_feed;
+}
+
+double dt__conc_prmt() {
+    // for batch systems: total volume is fixed and finite ==&gt; d/dt vol_feed == - d/dt vol_prmt == flow_prmt
+    // [g/L*min] = [L/min]   * [L]        * [g/L]                     / [L^2]
+    // derived from: vol_feed_0 * conc_feed_0 = vol_feed * conc_feed + vol_prmt * conc_prmt
+    // double flow_prmt_L_min = hours__to__min(flow_prmt);
+    // double flow_feed_L_min = flow_prmt_L_min + hours__to__min(flow_rtnt);
+    // if (vol_prmt &lt;= 0.0) return 0.0;
+    // return - (1 / pow(vol_prmt,2)) * ( (flow_prmt_L_min * vol_feed_0 * (conc_feed_0 - conc_feed)) + (vol_prmt * vol_feed * dt__conc_feed()) );
+    return 0.0;
+}
+
+double dt__weight_feed() {
+    // [g/min] = [g/L] * [L/min]
+    return conc_prmt * hours__to__min(flow_prmt);
+}
+
+double dt__flux_slope() {
+    return 0;
+    // return - 3e-06 * exp(-time_since_update); // new
+    // return - 1.874667087781295 * exp(-time_since_update); // old
+    //if (flux_slope &lt;= 0) return 0;
+    //return - 0.25 * exp(-time_since_update); // test
+}
+
+double dt__flux() {
+    // [L / m^2 * h * min] = [1 / min] * [L / m^2 * h]
+    return - flux_slope * (flux - flux_min) * pow(flux, 2 - fouling_type_n);
+}
+
+double dt__flow_prmt() {
+    // [L / h * min] = [m^2] * [L / m^2 * h * min]
+    return AREA_TOT * dt__flux();
+}
+
+double dt__temperature() {
+    double DT__TEMPERATURE = 0.1188787453;
+    if   (FIXED_TEMPERATURE) return 0;
+    else                     return DT__TEMPERATURE; 
+}
+
+double dt__temperature_sqrt() {
+    // [°C / min] = [°C]                * [1 / min]
+    if   (FIXED_TEMPERATURE) return 0;
+    else                     return (1 / (2 * sqrt(temperature)) * dt__temperature());
+}
+
+double dt__viscosity() {
+    // almost perfect approximation of water viscosity given a linear combination of temperature and sqrt(temperature)
+    return 1.49679781e-05 * dt__temperature() - 3.45605183e-04 * dt__temperature_sqrt();
+}
+
+double dt__res_tot() {
+    double f = liters__to__m3(flux);
+    double df = liters__to__m3(dt__flux());
+    double v = Pa_s__to__kPa_h(viscosity);
+    double dv = Pa_s__to__kPa_h(dt__viscosity());
+    // non constant viscosity
+    return - prs_TMP / (v * f) * (df / f + dv / v);
+    // simplified assuming constant viscosity
+    // return - (prs_TMP * df) / v / f / f;
+}
+
+double dt__vol_prmt() {
+    return hours__to__min(flow_prmt);
+}
+
+double dt__energy_per_m3() {
+    double vol_prmt_m3 = liters__to__m3(vol_prmt);
+    // double dt__vol_prmt_m3 = liters__to__m3(dt__vol_prmt());
+    double energy = energy_PP + energy_CP;
+    double dt__energy = dt__energy_PP() + dt__energy_CP();
+    if (vol_prmt &lt;= 0.0) return 0.0;
+    return 1000 * ((vol_prmt * dt__energy - dt__vol_prmt() * energy) / pow(vol_prmt, 2));
+}</declaration>
+	<template>
+		<name>Machine</name>
+		<parameter>const double vol_feed_IN, const double conc_feed_IN, const double prs_rtnt_IN, const double temperature_IN, const double area_tot_IN, const bool is_temperature_fixed_IN, const bool is_testing_IN, const double fouling_type_n_IN, const double pump_eff_IN</parameter>
+		<declaration>// Place local declarations here.
+
+clock t = 0;
+
+int set_increase_manually(int increase) {
+          if (fabs(time_min -   6) &lt; 0.1) return - 1;
+     else if (fabs(time_min -  10) &lt; 0.1) return + 8;
+     else if (fabs(time_min -  15) &lt; 0.1) return +18;
+     else if (fabs(time_min -  21) &lt; 0.1) return +17;
+     else if (fabs(time_min -  29) &lt; 0.1) return +15;
+     else if (fabs(time_min -  37) &lt; 0.1) return -56;
+     else if (fabs(time_min -  60) &lt; 0.1) return + 6;
+     else if (fabs(time_min -  63) &lt; 0.1) return +11;
+     else if (fabs(time_min -  64) &lt; 0.1) return +14;
+     else if (fabs(time_min -  66) &lt; 0.1) return +16;
+     else if (fabs(time_min -  68) &lt; 0.1) return +10;
+     else if (fabs(time_min -  72) &lt; 0.1) return -30;
+     else if (fabs(time_min -  73) &lt; 0.1) return -28;
+     else if (fabs(time_min -  83) &lt; 0.1) return +10;
+     else if (fabs(time_min -  87) &lt; 0.1) return +19;
+     else if (fabs(time_min -  90) &lt; 0.1) return +20;
+     else if (fabs(time_min -  93) &lt; 0.1) return + 9;
+     else if (fabs(time_min - 105) &lt; 0.1) return -59;
+     else return 0;
+}
+
+void update_variables_private(bool is_initialization, int increase) {
+
+    double prs_TMP_bef = prs_TMP;
+
+    // 1) UPDATE THE RETENTATE PRESSURE
+    if (!is_initialization) {
+        if (TESTING) increase = set_increase_manually(increase);
+        // if increase == 0 do nothing
+        if (increase == 0) return;
+        else {
+            // update retentate pressure with the selected value
+            prs_rtnt = prs_rtnt + SELECT_MUL * increase;
+            // safety check: PRS_RTNT_MIN &lt;= prs_rtnt &lt;= PRS_RTNT_MAX
+            prs_rtnt = fmax(PRS_RTNT_MIN, fmin(prs_rtnt, PRS_RTNT_MAX));
+        }
+    }
+
+    // 2) INITIALIZE THE INITIAL RESISTANCE
+    if (is_initialization) {
+        // res_tot = 2.82142096e12; // resistance estimated at t=0 [min] with 20 [°C] for the first dirty water sample (file_idx=2, tmp_idx=0, date=09/11/2023)
+        // res_tot = 3.630982732479321e12;
+        if (TESTING) res_tot = 4e12;
+        else         res_tot = 3.364724378734171e12 - 5.901024572488075e14 * viscosity;
+    }
+    //if (!is_initialization) {
+        // UPDATE THE INITIAL RESISTANCE ==&gt; WRONG RESULTS, DON'T DO IT
+        // double v = Pa_s__to__kPa_h(viscosity);
+        // double f = liters__to__m3(flux);
+        // df = dt__flux();
+        // dv = dt__viscosity();
+        // delta_res = (prs_TMP_delta - prs_TMP * (df/f + dv/v)) / (v * f);
+        // simplified assuming constant viscosity
+        // delta_res = (prs_TMP_delta / v / f) - (prs_TMP * df) / v / f / f;
+        // double delta_res = prs_TMP_delta / v / f;
+        // res_tot = res_tot + delta_res;
+    //}
+
+    // 3) INITIALIZE OR UPDATE ALL THE REMAINING VARIABLES
+    // reset last update clock
+    time_since_update = 0;
+    // update pressures
+    prs_feed_1 =  34.07 + 0.9861 * prs_rtnt; 
+    prs_feed_2 = 260.13 + 0.9957 * prs_rtnt; 
+    prs_TMP    = 0.5 * (prs_feed_2 + prs_rtnt) - PRS_PRMT;
+    prs_TMP_delta = prs_TMP - prs_TMP_bef;
+    // update flux
+    flux        = 1000.0 * prs_TMP / (Pa_s__to__kPa_h(viscosity) * res_tot); // (res_mbn + res_foul)
+    flux_slope = 5.5e-06;
+    // update flux min
+    // better if the res_tot would be correct but the actually here it is underestimated
+    flux_min    = 52.720999280910455 + 0.4278370026960715 * flux + 0.10647671810197559 * prs_TMP - 3.828397174414207e-12 * res_tot;
+    // upodate flows
+    flow_rtnt   = 2837.4215 - 6.487313 * prs_rtnt;
+    flow_prmt   = AREA_TOT * flux;
+    flow_feed   = flow_rtnt + flow_prmt;
+}
+
+void update_variables(int increase) {
+    update_variables_private(false, increase);
+}
+
+void initialize_variables() {
+
+    // bool flag testing mode
+    TESTING = is_testing_IN;
+
+    // bool flag if temperature is fixed
+    FIXED_TEMPERATURE = is_temperature_fixed_IN;
+
+    // area total of the membrane, constant given
+    AREA_TOT = area_tot_IN;
+
+    // initial temperature and viscosity
+    temperature = temperature_IN;
+    temperature_sqrt = sqrt(temperature);
+    viscosity   = 0.0022436217635221486 + 1.49679781e-05 * temperature -3.45605183e-04 * temperature_sqrt;
+
+    // initial volume, concentration, weight of the feed
+    vol_feed    = vol_feed_0  = vol_feed_IN;
+    conc_feed   = conc_feed_0 = conc_feed_IN;
+    // weight_feed = weight_feed_0 = conc_feed_0 * vol_feed_0;
+
+    prs_rtnt   = prs_rtnt_IN;
+
+    fouling_type_n = fouling_type_n_IN;
+    pump_eff       = pump_eff_IN;
+
+    update_variables_private(true, 0);
+
+}
+
+</declaration>
+		<location id="id0" x="25" y="-59">
+			<name x="25" y="-42">FILTERING</name>
+			<label kind="invariant" x="17" y="-8">// MODEL ODEs INVARIANTS
+flux_slope'       == dt__flux_slope() &amp;&amp;
+flux'             == dt__flux() &amp;&amp;
+flow_prmt'        == dt__flow_prmt() &amp;&amp;
+res_tot'          == dt__res_tot() &amp;&amp;
+vol_feed'         == - dt__vol_prmt() &amp;&amp;
+vol_prmt'         == + dt__vol_prmt() &amp;&amp;
+energy_CP'        == dt__energy_CP() &amp;&amp;
+energy_PP'        == dt__energy_PP() &amp;&amp;
+temperature'      == dt__temperature() &amp;&amp;
+temperature_sqrt' == dt__temperature_sqrt() &amp;&amp;
+viscosity'        == dt__viscosity() &amp;&amp;
+// energy_per_m3'    == dt__energy_per_m3() &amp;&amp;
+flow_feed'        == dt__flow_prmt() &amp;&amp;
+
+// CLOCKS INVARIANTS
+time_since_update' == 1.0 &amp;&amp;
+time_min'          == 1.0 &amp;&amp;
+time_hrs'          == (1.0 / 60.0) &amp;&amp;
+
+// TIME INVARIANTS
+t            	&lt;= UPDATE_INTERVAL
+
+// ODEs DISABLED
+// weight_feed' 	== - dt__weight_feed() &amp;&amp;
+// weight_prmt' 	== + dt__weight_feed() &amp;&amp;
+&amp;&amp; conc_feed'   	== dt__conc_feed()
+&amp;&amp; conc_prmt'   	== 0.0 //dt__conc_prmt()</label>
+		</location>
+		<location id="id1" x="-1215" y="-59">
+			<name x="-1232" y="-42">START</name>
+			<urgent/>
+		</location>
+		<location id="id2" x="-884" y="-59">
+			<name x="-961" y="-42">CONTROLLER</name>
+			<urgent/>
+		</location>
+		<location id="id3" x="458" y="-59">
+			<name x="450" y="-42">END</name>
+		</location>
+		<init ref="id1"/>
+		<transition id="id4" controllable="false">
+			<source ref="id0"/>
+			<target ref="id3"/>
+			<label kind="guard" x="68" y="-187">time_min &gt;= 127 &amp;&amp; TESTING</label>
+			<label kind="synchronisation" x="306" y="-187">ASAP!</label>
+			<nail x="51" y="-161"/>
+			<nail x="433" y="-161"/>
+		</transition>
+		<transition id="id5" controllable="false">
+			<source ref="id0"/>
+			<target ref="id2"/>
+			<label kind="guard" x="-314" y="-17">t &gt;= UPDATE_INTERVAL</label>
+			<label kind="assignment" x="-637" y="-17">t = 0</label>
+			<nail x="-17" y="9"/>
+			<nail x="-833" y="9"/>
+		</transition>
+		<transition id="id6">
+			<source ref="id2"/>
+			<target ref="id0"/>
+			<label kind="comments" x="-816" y="-136">KEEP PRESSURE</label>
+			<nail x="-833" y="-110"/>
+			<nail x="-19" y="-110"/>
+		</transition>
+		<transition id="id7" controllable="false">
+			<source ref="id0"/>
+			<target ref="id3"/>
+			<label kind="guard" x="51" y="-93">vol_feed &lt;= VOL_FEED_MIN</label>
+			<label kind="synchronisation" x="331" y="-84">ASAP!</label>
+		</transition>
+		<transition id="id8">
+			<source ref="id2"/>
+			<target ref="id0"/>
+			<label kind="select" x="-313" y="-238">increase: int[SELECT_MIN,SELECT_MAX]</label>
+			<label kind="guard" x="-663" y="-204">prs_TMP &lt; PRS_TMP_MAX - 1</label>
+			<label kind="assignment" x="-312" y="-211">update_variables(increase)</label>
+			<label kind="comments" x="-825" y="-204">INCREASE PRESSURE</label>
+			<nail x="-833" y="-178"/>
+			<nail x="-17" y="-178"/>
+		</transition>
+		<transition id="id9" controllable="false">
+			<source ref="id1"/>
+			<target ref="id2"/>
+			<label kind="assignment" x="-1156" y="-85">initialize_variables()</label>
+		</transition>
+	</template>
+	<system>
+const string STRATEGIES_PATH  = "C:/Users/franc/OneDrive - Università degli Studi di Udine/uni/4_anno/tirocinio/uppaal/strategies/";
+
+const double vol_feed_IN       = 200;
+const double conc_feed_IN      = 0.485;
+const double prs_rtnt_IN       = 40.3284;
+const double temperature_IN    = 20.0;
+const double area_tot_IN       = 0.99;
+const bool   is_temperature_fixed_IN = true;
+const bool   is_testing_IN     = false; // NB: change also machine-constants: UPDATE_INTERVAL, SELECT_MIN, SELECT_MAX, SELECT_MUL
+const double fouling_type_n_IN = 0; // Cake filtration (n = 0), Partial pore blocking  (n = 1), Internal pore blocking (n = 1.5), Complete pore blocking (n = 2)
+const double pump_eff_IN       = 0.8;
+
+machine = Machine(
+    vol_feed_IN, conc_feed_IN, prs_rtnt_IN, temperature_IN, area_tot_IN, is_temperature_fixed_IN, is_testing_IN, fouling_type_n_IN, pump_eff_IN
+);
+
+system machine;
+</system>
+	<simulator type="concrete">
+		<plot-widget title="prs_TMP">
+			<expression>prs_TMP</expression>
+		</plot-widget>
+		<plot-widget title="res_tot">
+			<expression>res_tot</expression>
+		</plot-widget>
+		<plot-widget title="flux">
+			<expression>flux</expression>
+		</plot-widget>
+		<plot-widget title="energy_CP">
+			<expression>energy_CP</expression>
+		</plot-widget>
+		<plot-widget title="energy_PP">
+			<expression>energy_PP</expression>
+		</plot-widget>
+	</simulator>
+	<queries>
+		<option key="--discretization" value="0.1"/>
+		<query>
+			<formula>Pr([][0,3] (flow_rtnt &gt;= 0))</formula>
+			<comment/>
+			<result outcome="success" type="interval" value="≥ 0.950056 (95% CI)" timestamp="2023-12-18 11:06:37 +0100">
+				<details>≥ 0.950056 (95% CI)</details>
+				<plot title="Probability Density Distribution" xaxis="run duration in time" yaxis="probability density">
+					<series title="density" type="b(0.000000)" color="0x0000ff" encoding="csv">3.01,4.503599627370496E15
+					</series>
+					<series title="average" type="pl" color="0x00dd00" encoding="csv">3.01,0.0
+3.01,4.503599627370496E15
+					</series>
+					<comment>Parameters: α=0.05, ε=0.05, bucket width=2.2204e-16, bucket count=1
+Runs: 72 in total, 72 (100%) displayed, 0 (0%) remaining
+Span of displayed sample: [3.01, 3.01]
+Mean estimate of displayed sample: ≈ 3.01</comment>
+				</plot>
+				<plot title="Probability Distribution" xaxis="run duration in time" yaxis="probability">
+					<series title="probability" type="b(0.000000)" color="0x0000ff" encoding="csv">3.01,1.0
+					</series>
+					<series title="average" type="pl" color="0x00dd00" encoding="csv">3.01,0.0
+3.01,1.0
+					</series>
+					<comment>Parameters: α=0.05, ε=0.05, bucket width=2.2204e-16, bucket count=1
+Runs: 72 in total, 72 (100%) displayed, 0 (0%) remaining
+Span of displayed sample: [3.01, 3.01]
+Mean estimate of displayed sample: ≈ 3.01</comment>
+				</plot>
+				<plot title="Cumulative Probability Distribution" xaxis="run duration in time" yaxis="probability">
+					<series title="cumulative" type="l" color="0x000000" encoding="csv">3.01,0.0
+					</series>
+					<series title="average" type="pl" color="0x00dd00" encoding="csv">3.01,0.0
+3.01,1.0
+					</series>
+					<comment>Parameters: α=0.05, ε=0.05, bucket width=2.2204e-16, bucket count=1
+Runs: 72 in total, 72 (100%) displayed, 0 (0%) remaining
+Span of displayed sample: [3.01, 3.01]
+Mean estimate of displayed sample: ≈ 3.01</comment>
+				</plot>
+				<plot title="Cumulative Probability Confidence Intervals" xaxis="run duration in time" yaxis="probability">
+					<series title="upper limit" type="k" color="0x0000dd" encoding="csv">3.01,0.04994408370585468
+					</series>
+					<series title="lower limit" type="k" color="0xdd0000" encoding="csv">3.01,0.0
+					</series>
+					<series title="cumulative" type="l" color="0x000000" encoding="csv">3.01,0.0
+					</series>
+					<series title="average" type="pl" color="0x00dd00" encoding="csv">3.01,0.0
+3.01,1.0
+					</series>
+					<comment>Parameters: α=0.05, ε=0.05, bucket width=2.2204e-16, bucket count=1
+Runs: 72 in total, 72 (100%) displayed, 0 (0%) remaining
+Span of displayed sample: [3.01, 3.01]
+Mean estimate of displayed sample: ≈ 3.01</comment>
+				</plot>
+				<plot title="Frequency Histogram" xaxis="run duration in time" yaxis="count">
+					<series title="count" type="b(0.000000)" color="0x0000ff" encoding="csv">3.01,72.0
+					</series>
+					<series title="average" type="pl" color="0x00dd00" encoding="csv">3.01,0.0
+3.01,72.0
+					</series>
+					<comment>Parameters: α=0.05, ε=0.05, bucket width=2.2204e-16, bucket count=1
+Runs: 72 in total, 72 (100%) displayed, 0 (0%) remaining
+Span of displayed sample: [3.01, 3.01]
+Mean estimate of displayed sample: ≈ 3.01</comment>
+				</plot>
+			</result>
+		</query>
+		<query>
+			<formula>Pr(&lt;&gt;[0,60] (machine.END))</formula>
+			<comment/>
+		</query>
+		<query>
+			<formula>Pr[&lt;=30; 1000] (&lt;&gt;machine.END) //under Cheap</formula>
+			<comment/>
+		</query>
+		<query>
+			<formula>Pr[&lt;=60; 1000] (min : ((energy_PP + energy_CP)))</formula>
+			<comment/>
+		</query>
+		<query>
+			<formula>simulate [ &lt;=60 ] { energy_CP + energy_PP } //under Fast</formula>
+			<comment/>
+			<result outcome="success" type="quality" timestamp="2024-06-27 18:44:23 +0200">
+				<option key="--discretization" value="0.1"/>
+				<plot title="Simulations (1)" xaxis="time" yaxis="value">
+					<series title="energy_CP + energy_PP" type="l" color="0xff0000" encoding="csv">0.0,0.0
+0.1,0.0300628868861365
+0.2,0.06008000743734246
+0.30000000000000004,0.09005410056009437
+0.4,0.11998766384712635
+0.5,0.14988298164662572
+0.6,0.17974214914038933
+0.7,0.2095670930918666
+0.7999999999999999,0.23935958980163674
+0.8999999999999999,0.26912128070983443
+1.0,0.2988536860067291
+1.1,0.32855821654978157
+1.2000000000000002,0.3582361843347475
+1.3000000000000003,0.38788881172722633
+1.4000000000000004,0.41751723962749265
+1.5000000000000004,0.447122534713961
+1.6000000000000005,0.47670569588801937
+1.7000000000000006,0.5062676600242787
+1.8000000000000007,0.5358093071147749
+1.9000000000000008,0.565331464882736
+2.0,0.594834912930713
+2.1,0.6243203864787931
+2.2,0.6537885797409586
+2.3000000000000003,0.6832401489811815
+2.4000000000000004,0.7126757152853473
+2.5000000000000004,0.7420958670804236
+2.6000000000000005,0.7715011624282885
+2.7000000000000006,0.8008921311182133
+2.8000000000000007,0.8302692765790465
+2.900000000000001,0.8596330776296088
+3.0,0.8889839900836214
+3.1,0.9183224482235834
+3.2,0.9476488661563705
+3.3000000000000003,0.9769636390618835
+3.4000000000000004,1.0062671443448274
+3.5000000000000004,1.035559742698597
+3.6000000000000005,1.0648417790892886
+3.7000000000000006,1.0941135836670077
+3.8000000000000007,1.1233754726108984
+3.900000000000001,1.1526277489136627
+4.0,1.181870703110757
+4.1,1.2111046139589368
+4.199999999999999,1.2403297490683665
+4.299999999999999,1.269546365492098
+4.399999999999999,1.2987547102763688
+4.499999999999998,1.3279550209748394
+4.599999999999998,1.357147526129605
+4.6999999999999975,1.3863324457215576
+4.799999999999997,1.4155099915924418
+4.899999999999997,1.4446803678407407
+5.0,1.4738437711933388
+5.1,1.5029492441078416
+5.199999999999999,1.5320188575417917
+5.299999999999999,1.5610543619604536
+5.399999999999999,1.590057381797071
+5.499999999999998,1.6190294275568002
+5.599999999999998,1.6479719064837859
+5.6999999999999975,1.6768861319922705
+5.799999999999997,1.7057733320306117
+5.899999999999997,1.7346346565207256
+6.0,1.7634711839937218
+6.1,1.7922839275244498
+6.199999999999999,1.8210738400526392
+6.299999999999999,1.8498418191657517
+6.399999999999999,1.878588711408105
+6.499999999999998,1.9073153161719443
+6.599999999999998,1.9360223892186195
+6.6999999999999975,1.9647106458716386
+6.799999999999997,1.993380763917962
+6.899999999999997,2.02203338624924
+7.0,2.0506691232707457
+7.1,2.079288555102331
+7.199999999999999,2.1078922335928065
+7.299999999999999,2.136480684166599
+7.399999999999999,2.1650544075193356
+7.499999999999998,2.193613881177115
+7.599999999999998,2.2221595609325346
+7.6999999999999975,2.2506918821691198
+7.799999999999997,2.279211261084507
+7.899999999999997,2.3077180958216346
+8.0,2.336212767516222
+8.1,2.3646956412679283
+8.2,2.39316706704187
+8.299999999999999,2.4216273805064485
+8.399999999999999,2.450076903812897
+8.499999999999998,2.478515946321388
+8.599999999999998,2.506944805278101
+8.699999999999998,2.5353637664472095
+8.799999999999997,2.5637731047013963
+8.899999999999997,2.5921730845741546
+9.0,2.620563960776839
+9.1,2.6489459786831766
+9.2,2.6773193747836794
+9.299999999999999,2.7056843771122217
+9.399999999999999,2.7340412056468137
+9.499999999999998,2.762390072686456
+9.599999999999998,2.7907311832057857
+9.699999999999998,2.8190647351890905
+9.799999999999997,2.847390919945127
+9.899999999999997,2.8757099224040776
+10.0,2.9040219213978595
+10.1,2.9272850914101514
+10.2,2.9504834073151214
+10.299999999999999,2.97362075763232
+10.399999999999999,2.9967006917722028
+10.499999999999998,3.0197264590404496
+10.599999999999998,3.042701042154948
+10.699999999999998,3.0656271861752264
+10.799999999999997,3.088507423577651
+10.899999999999997,3.1113440960771808
+11.0,3.134139373690396
+11.1,3.1568952714491365
+11.2,3.1796136641050796
+11.299999999999999,3.20229629910947
+11.399999999999999,3.224944808106388
+11.499999999999998,3.2475607171403627
+11.599999999999998,3.2701454557481555
+11.699999999999998,3.2927003650788675
+11.799999999999997,3.315226705165233
+11.899999999999997,3.3377256614511603
+12.0,3.3601983506656588
+12.1,3.382645826120778
+12.2,3.405069082500579
+12.299999999999999,3.4274690601992104
+12.399999999999999,3.4498466492585393
+12.499999999999998,3.47220269294929
+12.599999999999998,3.4945379910340946
+12.699999999999998,3.516853302746088
+12.748995447489575,3.52777735063182
+60.0,98.02978645565267
+					</series>
+					<comment/>
+				</plot>
+			</result>
+		</query>
+		<query>
+			<formula>strategy Fast = minE (time_min) [&lt;=200] : &lt;&gt; (machine.END)</formula>
+			<comment/>
+		</query>
+		<query>
+			<formula>strategy Cheap = minE (1000 * (energy_PP + energy_CP) / (1 + vol_prmt)) [&lt;=200] {prs_rtnt, prs_TMP} -&gt; {flux} : &lt;&gt; machine.END 
+
+// energy_PP + energy_CP
+//, energy_CP, energy_PP, vol_prmt
+// flux, prs_TMP</formula>
+			<comment/>
+			<result outcome="success" type="quality" timestamp="2024-06-27 19:26:31 +0200">
+				<option key="--discretization" value="0.1"/>
+			</result>
+		</query>
+		<query>
+			<formula>saveStrategy("C:/Users/franc/OneDrive/Desktop/strategies/Strategy_Fast.json", Fast)</formula>
+			<comment/>
+		</query>
+		<query>
+			<formula>saveStrategy("C:/Users/franc/OneDrive/Desktop/strategies/Strategy_Cheap.json", Cheap)</formula>
+			<comment/>
+			<result outcome="success" type="quality" timestamp="2024-06-27 19:27:26 +0200">
+				<option key="--discretization" value="0.1"/>
+			</result>
+		</query>
+		<query>
+			<formula>strategy Fast = loadStrategy {prs_rtnt, prs_TMP} -&gt; {flux} ("C:/Users/franc/OneDrive/Desktop/strategies/Strategy_Fast.json")</formula>
+			<comment/>
+		</query>
+		<query>
+			<formula>strategy Cheap = loadStrategy {prs_rtnt, prs_TMP} -&gt; {flux} ("C:/Users/franc/OneDrive/Desktop/strategies/Strategy_Cheap.json")</formula>
+			<comment/>
+			<result outcome="success" type="quality" timestamp="2024-06-27 19:08:53 +0200">
+				<option key="--discretization" value="0.1"/>
+			</result>
+		</query>
+		<query>
+			<formula>strategy TMP_Under_150 = minE (time_min) [&lt;=60] {prs_rtnt, prs_TMP} -&gt; {flux} : &lt;&gt; (machine.END &amp;&amp; prs_TMP &lt; 150) </formula>
+			<comment/>
+		</query>
+		<query>
+			<formula>strategy TMP_Under_200 = minE (time_min) [&lt;=60] {prs_rtnt, prs_TMP} -&gt; {flux} : &lt;&gt; (machine.END &amp;&amp; prs_TMP &lt; 200) </formula>
+			<comment/>
+			<option key="--discretization" value="0.1"/>
+			<result outcome="success" type="quality" timestamp="2024-06-27 18:51:39 +0200">
+				<option key="--discretization" value="0.1"/>
+			</result>
+		</query>
+		<query>
+			<formula>Pr(&lt;&gt;[0,20] (machine.END)) under Cheap //TMP_Under_200</formula>
+			<comment/>
+			<result outcome="success" type="interval" value="≥ 0.950056 (95% CI)" timestamp="2024-06-27 19:24:51 +0200">
+				<option key="--discretization" value="0.1"/>
+				<details>≥ 0.950056 (95% CI)</details>
+				<plot title="Probability Density Distribution" xaxis="run duration in time" yaxis="probability density">
+					<series title="density" type="b(0.000000)" color="0x0000ff" encoding="csv">19.152101675352814,4.503599627370496E15
+					</series>
+					<series title="average" type="pl" color="0x00dd00" encoding="csv">19.152101675352814,0.0
+19.152101675352814,4.503599627370496E15
+					</series>
+					<comment>Parameters: α=0.05, ε=0.05, bucket width=2.2204e-16, bucket count=1
+Runs: 72 in total, 72 (100%) displayed, 0 (0%) remaining
+Span of displayed sample: [19.1521016753528, 19.1521016753528]
+Mean estimate of displayed sample: ≈ 19.1521016753528</comment>
+				</plot>
+				<plot title="Probability Distribution" xaxis="run duration in time" yaxis="probability">
+					<series title="probability" type="b(0.000000)" color="0x0000ff" encoding="csv">19.152101675352814,1.0
+					</series>
+					<series title="average" type="pl" color="0x00dd00" encoding="csv">19.152101675352814,0.0
+19.152101675352814,1.0
+					</series>
+					<comment>Parameters: α=0.05, ε=0.05, bucket width=2.2204e-16, bucket count=1
+Runs: 72 in total, 72 (100%) displayed, 0 (0%) remaining
+Span of displayed sample: [19.1521016753528, 19.1521016753528]
+Mean estimate of displayed sample: ≈ 19.1521016753528</comment>
+				</plot>
+				<plot title="Cumulative Probability Distribution" xaxis="run duration in time" yaxis="probability">
+					<series title="cumulative" type="l" color="0x000000" encoding="csv">19.152101675352814,0.0
+					</series>
+					<series title="average" type="pl" color="0x00dd00" encoding="csv">19.152101675352814,0.0
+19.152101675352814,1.0
+					</series>
+					<comment>Parameters: α=0.05, ε=0.05, bucket width=2.2204e-16, bucket count=1
+Runs: 72 in total, 72 (100%) displayed, 0 (0%) remaining
+Span of displayed sample: [19.1521016753528, 19.1521016753528]
+Mean estimate of displayed sample: ≈ 19.1521016753528</comment>
+				</plot>
+				<plot title="Cumulative Probability Confidence Intervals" xaxis="run duration in time" yaxis="probability">
+					<series title="upper limit" type="k" color="0x0000dd" encoding="csv">19.152101675352814,0.04994408370585468
+					</series>
+					<series title="lower limit" type="k" color="0xdd0000" encoding="csv">19.152101675352814,0.0
+					</series>
+					<series title="cumulative" type="l" color="0x000000" encoding="csv">19.152101675352814,0.0
+					</series>
+					<series title="average" type="pl" color="0x00dd00" encoding="csv">19.152101675352814,0.0
+19.152101675352814,1.0
+					</series>
+					<comment>Parameters: α=0.05, ε=0.05, bucket width=2.2204e-16, bucket count=1
+Runs: 72 in total, 72 (100%) displayed, 0 (0%) remaining
+Span of displayed sample: [19.1521016753528, 19.1521016753528]
+Mean estimate of displayed sample: ≈ 19.1521016753528</comment>
+				</plot>
+				<plot title="Frequency Histogram" xaxis="run duration in time" yaxis="count">
+					<series title="count" type="b(0.000000)" color="0x0000ff" encoding="csv">19.152101675352814,72.0
+					</series>
+					<series title="average" type="pl" color="0x00dd00" encoding="csv">19.152101675352814,0.0
+19.152101675352814,72.0
+					</series>
+					<comment>Parameters: α=0.05, ε=0.05, bucket width=2.2204e-16, bucket count=1
+Runs: 72 in total, 72 (100%) displayed, 0 (0%) remaining
+Span of displayed sample: [19.1521016753528, 19.1521016753528]
+Mean estimate of displayed sample: ≈ 19.1521016753528</comment>
+				</plot>
+			</result>
+		</query>
+		<query>
+			<formula/>
+			<comment/>
+		</query>
+		<query>
+			<formula/>
+			<comment/>
+		</query>
+		<query>
+			<formula/>
+			<comment/>
+		</query>
+	</queries>
+</nta>
