@@ -83,12 +83,17 @@ The complex model achieves better results but is affected by a severe collineari
 * **7_load_uppaal_series**: transforms the raw simulated data exported from UPPAAL into a dataframe that can be easily justaxposed on the real data to validate the UPPAAL simulations. Of course, the UPPAAL simulations must be adjusted in order to alter the pressure in the same way as was done during the experiments.
 * **8_compare_estimated_vs_uppaal**: finally the final validation of the model is possible: a chart is built by justaxposing the real data with the UPPAAL's simulations. Also, the error metrics are computed, for example: ```R-squared=0.9936```, ```MAPE=3.08%```.
 
+## Compilation
+1. git pull the repository
+1. run the script ```download_and_install_container.sh``` which will download and install the image and then will start the container.
+1. from the container move to the app directory ```cd /app/```
+1. launch the pipeline ```python3 main.py```
 
-TODO
-In particular:
-   * ```Pressure_Permeate```: is estimated with a constant value. Although its value varies, it can be simplified by using its mean since it's never far from the mean value and thus there is a negligible error.
-   * ```Pressure_Retentate```: is the control variable which the operator can set. It can be assumed to be discrete since -once its value is set- its stays close to it, until another manual change occurs.
-   * ```Feed_Pressure_1``` (the pressure before entering the pressure pump) for the same reason as above can be assumed to be a discrete variable. It is approximated using a linear model on the ```Pressure_Retentate```.
-   * ```Feed_Pressure_2``` (the pressure before meeting the membrane) for the same reason as above can be assumed to be a discrete variable. It is approximated using a linear model on the ```Pressure_Retentate```.
-   * ```Flow_Retentate```  for the same reason as above can be assumed to be a discrete variable. It is approximated using a linear model on the ```Pressure_Retentate```.
+At the end in the folder ```/app/output/``` will find the generated images, the estimated coefficients, and the html version of all the notebooks launched with any parameter.
 
+## Output Example
+To see an example of the pipeline's output without pulling the repository you can check the folder ```/example-outcome```.
+To avoid data duplication on GitHub, the folder ```/example-outcome/data/``` does contain the raw data, which is already available in ```/data``` folder.
+
+## Conduct your own data analysis
+TODO.
