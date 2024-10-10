@@ -1,30 +1,37 @@
 #!/bin/bash
 
-#cd '/mnt/c/Users/franc/OneDrive - Università degli Studi di Udine/uni/4_anno/tirocinio/data_analysis/' 
-
 # to debug
 set -x
 
-### add data to volume
-cd './data/' 
-# tar -czvf  data.tar.gz concentrations/ from_uppaal/ from_sensors/
-
-image_version=4
-container_version=tmp
-
-my_img=uf-analysis-image-v${image_version}
-my_cnt=uf-analysis-container-v${container_version}
+# image, container and volume names
+my_img=uf-analysis-image
+my_cnt=uf-analysis-container-TEMP
 my_vol=uf-analysis-dataset
 
-data_dir="/app/data"
-tmp_dir="/app/tmp"
+# reset the volume
+docker volume rm     ${my_vol}
+docker volume create ${my_vol}
 
-# start & run a detached container
+# specify the paths
+# NB in the local data is assumed that only the raw data are present
+local_data_dir='./data/' 
+cnt_data_dir="/app/data"
+cnt_tmp_dir="/app/tmp"
+
+# create a temporary container
+# copy the local data to /app/tmp
+# mount the volume to /app/data
 docker run -dit --name=${my_cnt} \
-    --mount  source=${my_vol},target=${data_dir} \
-    --volume ./:${tmp_dir} \
+    --mount  source=${my_vol},target=${cnt_data_dir} \
+    --volume ${local_data_dir}:${cnt_tmp_dir} \
     --entrypoint /bin/bash \
     ${my_img}
+
+# copy the data from /app/tmp to /app/data (so into the volume)
+docker exec ${my_cnt} /bin/bash -c "cd ${cnt_tmp_dir} && cp -r ./ ${cnt_data_dir} && cd ${cnt_data_dir} && ls -l"
+
+# delete temporary container
+docker container rm ${my_cnt}
 
 ### to start & run an exited container
 # docker start -a `docker ps -q -l`
@@ -33,8 +40,3 @@ docker run -dit --name=${my_cnt} \
 #docker ps List containers
 #-q list only container IDs
 #-l list only last created container
-
-### to enter in a running container
-docker exec ${my_cnt} /bin/bash -c "cd ${tmp_dir} && cp -r ./ ${data_dir} && cd ${data_dir} && ls -l"
-
-#docker container rm `docker ps -q -l`
