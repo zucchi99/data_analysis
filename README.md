@@ -68,13 +68,13 @@ Folders:
 ## Source Files - Data Analysis (Python)
 The data analysis part is implemented in python, by a sequence of python notebooks.
 The ```main.py``` file invokes the various notebooks. There are two additional python files: ```constants.py```, which imports all the needed packages and define set of costants used (such as paths) and the ```functions.py``` which contains the functions that are shared across the notebooks. The notebooks are the following:
-0. **0_extend__df_raw**: extends the raw data by adding derived columns (such as the flux, the resistance, the viscosity, etc.).
-0. **1_explore__df_ext**: has no real effect, it just serves for exploring the dataset and understand correlations and mutual effects.
-0. **2_estimate_factors**: the goal is to define simple models that allow to compute and estimate some observation variables. The estimated coefficients are then exported to the ```estimated_coefficients.json``` file (**).
-0. **3_add_concentrations**: as above said, is to be implemented yet.
-0. **4_simulate_flux_ARIMA**: generates simulation of the flux towards the future using the ARIMA models. Particularly relevant when the real data collected for a fixed setting spans over a small time interval.
-0. **5a_add_initial_flux**: is used to estimate the real value of the initial flux. Since the frequency at which data is gathered is 1 minute, there can be up to 1 minute of delay between the moment in which the pressure has been changed and the sensors record the data. So, the real initial flux is estimated using the precedent value of the resistance, the last one before the change of the pressure.
-0. 
+1. **0_extend__df_raw**: extends the raw data by adding derived columns (such as the flux, the resistance, the viscosity, etc.).
+1. **1_explore__df_ext**: has no real effect, it just serves for exploring the dataset and understand correlations and mutual effects.
+1. **2_estimate_factors**: the goal is to define simple models that allow to compute and estimate some observation variables. The estimated coefficients are then exported to the ```estimated_coefficients.json``` file (**).
+1. **3_add_concentrations**: as above said, is to be implemented yet.
+1. **4_simulate_flux_ARIMA**: generates simulation of the flux towards the future using the ARIMA models. Particularly relevant when the real data collected for a fixed setting spans over a small time interval.
+1. **5a_add_initial_flux**: is used to estimate the real value of the initial flux. Since the frequency at which data is gathered is 1 minute, there can be up to 1 minute of delay between the moment in which the pressure has been changed and the sensors record the data. So, the real initial flux is estimated using the precedent value of the resistance, the last one before the change of the pressure.
+1. 
 
 
 TODO
