@@ -84,7 +84,7 @@ The complex model achieves better results but is affected by a severe collineari
 * **8_compare_estimated_vs_uppaal**: finally the final validation of the model is possible: a chart is built by justaxposing the real data with the UPPAAL's simulations. Also, the error metrics are computed, for example: ```R-squared=0.9936```, ```MAPE=3.08%```.
 
 ## Compilation
-1. git pull the repository
+1. clone the repository: ```git clone https://github.com/zucchi99/UPPAAL-Modeling-Ultrafiltration-Plant.git```
 1. if missing, install docker: ```apt-get install docker-compose```
 1. run the script ```download_and_install_container.sh``` which will download and install the image and then will start the container.
 1. copy your raw data files to analyze in the path ```data/0_raw/UF```
