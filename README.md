@@ -95,7 +95,7 @@ At the end in the folder ```/app/output/``` will find the generated images, the 
 
 ## Output Example
 To see an example of the pipeline's output without pulling the repository you can check the folder ```/example-outcome/```.
-To avoid data duplication on GitHub, the folder ```/example-outcome/data/``` does contain the raw data, which is already available in the ```/data/``` folder.
+To avoid data duplication on GitHub, the folder ```/example-outcome/data/``` does not contain the raw data, which is already available in the ```/data/``` folder.
 
 ## Conduct your own data analysis
 TODO.
