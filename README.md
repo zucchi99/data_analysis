@@ -88,6 +88,7 @@ The complex model achieves better results but is affected by a severe collineari
 1. clone the repository: ```git clone https://github.com/zucchi99/UPPAAL-Modeling-Ultrafiltration-Plant.git```
 1. change working directory to the one of this project:  ```cd UPPAAL-Modeling-Ultrafiltration-Plant```
 1. copy your raw data files to analyze to the raw input path: ```cp <your_csv_files> data/0_raw/UF``` (eventually remove our examples)
+1. in the ```src/constants.py``` file, specify in the ```MEMBRANE_USED``` dictionary for each day of experiments which membrane and how many were used. Note, if the membrane is different from the previous, add also in the ```MEMBRANES``` dictionary the information of the membrane. This information is necessary to obtain the membrane area and then to derive the flux. (TODO create a separate input csv/excel file)
 1. run the script that (i) downloads and installs the docker image and (ii) starts the docker container ```./download_and_install_container.sh```
 1. launch the pipeline: ```python3 main.py```
 
