@@ -31,6 +31,7 @@ docker run -dit --name=${my_cnt} \
 docker exec ${my_cnt} /bin/bash -c "cd ${cnt_tmp_dir} && cp -r ./ ${cnt_data_dir} && cd ${cnt_data_dir} && ls -l"
 
 # delete temporary container
+docker stop ${my_cnt}
 docker container rm ${my_cnt}
 
 ### to start & run an exited container
