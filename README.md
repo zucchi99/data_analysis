@@ -87,8 +87,8 @@ The complex model achieves better results but is affected by a severe collineari
 1. if missing, install docker: ```apt-get install docker-compose```
 1. clone the repository: ```git clone https://github.com/zucchi99/UPPAAL-Modeling-Ultrafiltration-Plant.git```
 1. change working directory to the one of this project:  ```cd UPPAAL-Modeling-Ultrafiltration-Plant```
+1. copy your raw data files to analyze to the raw input path: ```cp <your_csv_files> data/0_raw/UF``` (eventually remove our examples)
 1. run the script that (i) downloads and installs the docker image and (ii) starts the docker container ```./download_and_install_container.sh```
-1. copy your raw data files to analyze to the raw input path: ```cp <your_csv_files> data/0_raw/UF```
 1. launch the pipeline: ```python3 main.py```
 
 At the end in the folder ```/app/output/``` will find the generated images, the estimated coefficients, and the html version of all the notebooks launched with any parameter.
