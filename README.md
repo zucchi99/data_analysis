@@ -88,7 +88,7 @@ The complex model achieves better results but is affected by a severe collineari
 1. if missing, install docker: ```apt-get install docker-compose```
 1. run the script ```download_and_install_container.sh``` which will download and install the image and then will start the container.
 1. from the container move to the app directory ```cd /app/```
-1. copy your raw data files to analyze in the path **data/0_raw/UF**
+1. copy your raw data files to analyze in the path ```data/0_raw/UF```
 1. launch the pipeline ```python3 main.py```
 
 At the end in the folder ```/app/output/``` will find the generated images, the estimated coefficients, and the html version of all the notebooks launched with any parameter.
