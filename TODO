@@ -7,3 +7,10 @@ fix image vulnerabilities
 detail everything in readme
 detail in readme possible extensions for vs code users (html viewer, notebook simulator etc.)
 split last two notebooks in a separate function
+
+1. read concentrations from the metadata file
+1. put the membrane data in a separate file
+1. show the charts before dropping outliers (hightlight outliers in red!)
+1. invoke data cleaning
+1. show the charts after dropping outliers
+1. automatically identify TMP regions
