@@ -25,6 +25,15 @@ def estimate_initial_resistance(df, y_col='res tot est at 20° [1/m]', factors=[
     #compute_error_metrics(y, y_pred)
     return model, y_pred, intercept, coeffs
 
+def check_df_size_after_filter(df_filtered, in_file, about) :
+    if len(df_filtered) != 1 :
+        if len(df_filtered) == 0 :
+            print(f"ERROR: no associated {about} metadata found, please fill the data in the input file {in_file}!")
+        if len(df_filtered)  > 1 :
+            print(f"ERROR: more than one {about} metadata found, please keep only one in the input file {in_file}! Matching rows:")
+            print(df_filtered)
+        sys.exit(1)
+
 def add_initial_flux(df, INITIAL_VISCOSITY, tmp_col='TMP est [kPa]', flux_col='flux at 20° [L/m^2h]', flux_used='flux at 20°', res_col='res tot est at 20° [1/m]', time_col='time [m]') :
     previous_time_col = f'{time_col} prev'
     previous_res_col = f'{res_col} prev'
