@@ -276,16 +276,17 @@ def add_TMP_levels(df, col='TMP [kPa]', levels=[-math.inf,100,200,300,400,math.i
 def drop_all_outliers(df, drop_initial_final_off_rows=True, drop_off_rows=True, drop_outliers=True, log=True) :
     if drop_initial_final_off_rows :
         df = drop_initial_final_rows(df)
-    df, df_OF = get_df_ON_OFF(df)
     args = {}
+    args['log'] = log
     if drop_off_rows :
-        print(" - dropped rows:", len(df_OF))
-        args['log'] = log
+        df_ON, df_OFF = get_df_ON_OFF(df)
+        df = df_ON
+        print(f"dropped {len(df_OFF)} rows after checking machine ON/OFF state during execution")
         if drop_outliers :
-            df, df_drop1 = remove_outliers(df, cols=['res tot [1/m]'], drop_fun=drop_outliers_far_median, args=args)
+            df, df_drop1 = remove_outliers(df, cols=['res tot [1/m]'],    drop_fun=drop_outliers_far_median,     args=args)
             df, df_drop2 = remove_outliers(df, cols=['prs feed_2 [kPa]'], drop_fun=drop_outliers_far_neighbours, args=args)
-            df, df_drop3 = remove_outliers(df, cols=['flux [L/m^2h]'], drop_fun=drop_outliers_out_range, args=args)
-            df, df_drop4 = remove_outliers(df, cols=['flux [L/m^2h]'], drop_fun=drop_initial_jumps)
+            df, df_drop3 = remove_outliers(df, cols=['flux [L/m^2h]'],    drop_fun=drop_outliers_out_range,      args=args)
+            df, df_drop4 = remove_outliers(df, cols=['flux [L/m^2h]'],    drop_fun=drop_initial_jumps)
             #del(df_drop1, df_drop2, df_drop3, df_drop4)
     return df
 
@@ -298,22 +299,22 @@ def drop_initial_final_rows(df, MIN_MINUTES_ON=5, log=True) :
     while (counter < MIN_MINUTES_ON and i < len(df)) :
         counter = (counter + 1) if (df.loc[i, 'is_ON'] == True) else 0
         i += 1
-    new_idx = i - MIN_MINUTES_ON
+    new_idx = i - counter
     if (new_idx > 0) :
         df = (df[new_idx:]).reset_index(drop=True)
     if log :
-        print(f"removed {new_idx} initial rows")
+        print(f"dropped {new_idx} rows after checking machine ON/OFF state at start")
     # remove FINAL rows until machine in ON for >= 5 min
     counter = 0
     i = 0
     while (counter < MIN_MINUTES_ON and i < len(df)) :
         counter = (counter + 1) if (df.loc[len(df)-i-1, 'is_ON'] == True) else 0
         i += 1
-    new_idx = i - MIN_MINUTES_ON
+    new_idx = i - counter
     if (new_idx > 0) :
-        df = (df[:-i]).reset_index(drop=True)
+        df = (df[:-new_idx]).reset_index(drop=True)
     if log :
-        print(f"removed {new_idx} final rows")
+        print(f"dropped {new_idx} rows after checking machine ON/OFF state at end")
     return df
 
 def get_df_ON_OFF(df) :
@@ -378,13 +379,11 @@ def drop_outliers_far_median(df, c, args:dict={}) :
 def remove_outliers(df, cols=['res tot [1/m]'], drop_fun=drop_outliers_far_median, args:dict={}) :
     log = args.get('log', True)
     for c in cols :
-        if log:
-            print('removing outliers rows of column:', c)
         df, to_drop = drop_fun(df, c, args)
         df_drop = df.loc[to_drop, :]
         df = df.drop(labels=to_drop, axis=0).reset_index(drop=True)
         if log:
-            print(" - dropped rows:", len(df_drop))
+            print(f'dropped {len(df_drop)} rows after checking outliers on column {c} by function {drop_fun.__name__}')
     return df, df_drop
 
 def get_concentration_lines(df, time_col, conc_col='initial feed concentration [g/L]', conc_type='feed', log=True) :
