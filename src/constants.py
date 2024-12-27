@@ -37,7 +37,7 @@ PATH_DATA   = PATH_MAIN + 'data/'
 PATH_OUT    = PATH_MAIN + 'output/'
 
 # INPUT DIRECTORIES
-PATH_CONCENTRATIONS              = PATH_DATA + 'concentrations/'
+PATH_METADATA                    = PATH_DATA + 'metadata/'
 
 PATH_SENSORS_DATA_RAW_UF         = PATH_DATA + 'from_sensors/0_raw/UF/'
 PATH_SENSORS_DATA_EXT_UF_V1      = PATH_DATA + 'from_sensors/1_extended/UF/v1/'
@@ -59,7 +59,8 @@ FILE_PARAMETERS                  = PATH_MAIN + 'parameters.json'
 FILE_DATA_SIMULATIONS_ASSOC      = PATH_MAIN + 'real_data__uppaal_simulations__association.json'
 
 # INPUT FILES
-FILE_CONCENTRATIONS_DATA         = PATH_CONCENTRATIONS + 'concentrations.xlsx'
+FILE_EXPERIMENTS_METADATA         = PATH_METADATA + 'experiments.xlsx'
+FILE_MEMBRANES_METADATA           = PATH_METADATA + 'membranes.xlsx'
 
 # OUTPUT FILES (stored in PATH_OUT directory)
 FILE_EST_COEFFS                  = PATH_ESTIMATED_COEFFICIENTS + 'estimated_coefficients.json'
@@ -72,7 +73,7 @@ ALL_PATHS =  [
     PATH_DATA,
     PATH_OUT,
     # INPUT DIRECTORIES
-    PATH_CONCENTRATIONS,
+    PATH_METADATA,
     PATH_SENSORS_DATA_RAW_UF,
     PATH_SENSORS_DATA_EXT_UF_V1,
     PATH_SENSORS_DATA_EXT_UF_V2,
@@ -89,7 +90,7 @@ ALL_PATHS =  [
 # NEVER DELETE THESE!!!
 RAW_DATA_PATHS = [
     PATH_DATA,
-    PATH_CONCENTRATIONS,
+    PATH_METADATA,
     PATH_SENSORS_DATA_RAW_UF,
     PATH_UPPAAL_DATA_RAW,
 ]
@@ -162,14 +163,11 @@ TMP_INTERVALS = {
 }
 
 DEFAULT_PARAMETERS = {
-    "subfolder" : "UF/",
     "file_idx_uppaal" : 0,
     "file_idx" : 0,
     "tmp_idx" : 0,
-    "initial_feed_volume_L" : 100,
+    "log" : True,
     "reset_columns_when_OFF" : True,
-    "drop_initial_final_off_rows" : True,
-    "drop_off_rows" : True,
     "drop_outliers" : True,
     "plot_scatterplot_matrix" : False,
     "use_default_arima_params": True,
@@ -191,25 +189,6 @@ FOULING_NAME = {
 
 COLOR_CYCLE = plot.rcParams['axes.prop_cycle'].by_key()['color']
 
-MEMBRANE_USED = {
-    '2023-04-18' : ('INSIDE CeRAM', 3),
-    '2023-04-28' : ('INSIDE CeRAM', 3),
-    '2023-06-14' : ('INSIDE CeRAM', 3),
-    '2023-06-15' : ('INSIDE CeRAM', 3),
-    '2023-06-19' : ('INSIDE CeRAM', 3),
-    '2023-06-21' : ('INSIDE CeRAM', 3),
-    '2023-06-22' : ('INSIDE CeRAM', 3),
-    '2023-06-30' : ('INSIDE CeRAM', 3),
-    '2023-11-03' : ('INSIDE CeRAM', 3),
-    '2023-11-08' : ('COM0251178',   3),
-    '2023-11-09' : ('COM0251178',   3),
-    '2023-11-10' : ('COM0251178',   3),
-    '2024-07-11' : ('COM0251178',   3),
-    '2024-07-12' : ('COM0251178',   3),
-    '2024-07-15' : ('COM0251178',   3),
-    '2024-07-16' : ('COM0251178',   3),
-}
-
 UF_COLUMNS = {
     'Date'          : 'date',
     'Time'          : 'time',
@@ -226,40 +205,12 @@ UF_COLUMNS = {
     'TT1[°C]'       : 'temperature [°C]'
 }
 
-MEMBRANES = {
-    'COM0251178' : {
-        # https://liqtech.com/ceramic-membranes-dpf/silicon-carbide-ceramic-membrane/comem-ceramic-membrane/
-        'aim'       : 'UF',
-        'material'  : 'ceramic',
-        'producer'  : 'LiqTech',
-        'model'     : 'COM0251178',
-        'channels'  : 30,
-        'channel dim' : 0.003, # [m]
-        'diameter'  : 0.025, # [m]
-        'length'    : 1.178, # [m]
-        'area'      : 0.33,  # [m^2]
-        'pore size' : 60     # [nm]
-    },
-    'INSIDE CeRAM' : {
-        # https://www.tami-industries.com/en/produits/inside-ceram-4/
-        'aim'       : 'UF',
-        'material'  : 'ceramic',
-        'producer'  : 'TAMI',
-        'model'     : 'INSIDE CeRAM',
-        'channels'  : 19,
-        'diameter'  : 0.025, # [m]
-        'length'    : 1.178, # [m]
-        'area'      : 0.25,  # [m^2]
-        #'pore size' : ?     # [nm]
-    },
-}
-
 UNIT_MEASURES = {
     'bar'   : ('kPa', (lambda x :  100 * x)),
     'm^3/h' : ('L/h', (lambda x : 1000 * x))
 }
 
-FEED_TANK_CAPACITY_LITERS = 150
+# FEED_TANK_CAPACITY_LITERS = 150
 
 PRS_ATM_kpa = 101.325
 
