@@ -38,8 +38,8 @@ def merge_data_files() :
     i = 0
     output_file = 'ALL_DATA.csv'
     output_file_path = f"{PATH_SENSORS_DATA_EXT_UF_V1}/{output_file}"
-    for f in sorted(os.listdir(PATH_SENSORS_DATA_EXT_UF_V1)) :
-        if re.match('.*\.csv', f) and (not f in [output_file]) : 
+    for f in listdir_by_extension(PATH_SENSORS_DATA_EXT_UF_V1) :
+        if (not f in [output_file]) : 
             # read file
             f = PATH_SENSORS_DATA_EXT_UF_V1 + '/' + f
             df_cur = pd.read_csv(f)
@@ -84,7 +84,7 @@ def init_chars(n, char='#') :
 
 def run_all() : 
     j = 0
-    for notebook in notebooks :
+    for notebook in notebooks[:1] :
         f_ipynb = f'src/{notebook}.ipynb'
         n_chars = 1
         print("\n###################################################")
@@ -99,8 +99,7 @@ def run_all() :
         # one execution per file        # one execution per input file
         # input files are ordered by date (alphabetically order with file names 'yyyy-mm-dd .*')
         # last input file may be ALL_DATA.csv
-        in_files = sorted(os.listdir(data_path))
-        for f_input in in_files :
+        for f_input in listdir_by_extension(data_path) :
             file_idx        += 1
             file_idx_uppaal += 1
             f_html = f'{path_html}/{f_input}-{file_idx}.html'
@@ -136,8 +135,8 @@ def run_all() :
             else :
                 update_parameters_json(params)
                 run_notebook(f_ipynb, f_html)
-        if notebook == '0_extend__df_raw' :
-            merge_data_files()
+        #if notebook == '0_extend__df_raw' :
+        #    merge_data_files()
         j += 1
 
 def run_notebook(notebook_file, output_file):
@@ -183,11 +182,6 @@ update_parameters_json()
 
 # read parameters
 params = read_parameters()
-
-# set local parameters
-drop_outliers = params['drop_outliers']
-drop_initial_final_off_rows = params['drop_initial_final_off_rows']
-drop_off_rows = params['drop_off_rows']
 
 # set notebook global parameters
 params['plot_scatterplot_matrix'] = False

@@ -25,6 +25,9 @@ def estimate_initial_resistance(df, y_col='res tot est at 20° [1/m]', factors=[
     #compute_error_metrics(y, y_pred)
     return model, y_pred, intercept, coeffs
 
+def listdir_by_extension(path, ext='csv') :
+    return sorted([f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f)) and re.match(f".*\.{ext}$", f)])
+
 def check_df_size_after_filter(df_filtered, in_file, about) :
     if len(df_filtered) != 1 :
         if len(df_filtered) == 0 :
