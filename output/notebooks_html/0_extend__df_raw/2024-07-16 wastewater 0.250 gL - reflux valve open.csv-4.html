@@ -7557,6 +7557,8 @@ plot_scatterplot_matrix: False
 use_default_arima_params: True
 default_arima_params: [1, 1, 0]
 include_arima_simulations_in_analysis: True
+include_outliers: True
+mark_outliers: True
 </pre>
 </div>
 </div>
@@ -7612,8 +7614,8 @@ output file:
 <div class="jp-InputPrompt jp-InputArea-prompt">In [4]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">df_experiments</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="n">FILE_EXPERIMENTS_METADATA</span><span class="p">)</span>
-<span class="n">df_membranes</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="n">FILE_MEMBRANES_METADATA</span><span class="p">)</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">cur_experiment</span> <span class="o">=</span> <span class="n">get_experiment_data</span><span class="p">(</span><span class="n">cur_file</span><span class="p">)</span>
+<span class="n">cur_membrane</span>   <span class="o">=</span> <span class="n">get_membrane_data</span><span class="p">(</span><span class="n">cur_experiment</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -7625,27 +7627,6 @@ output file:
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
 <div class="jp-InputPrompt jp-InputArea-prompt">In [5]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">cur_file_name</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s1">'.csv'</span><span class="p">,</span> <span class="s1">''</span><span class="p">,</span> <span class="n">cur_file</span><span class="p">)</span>
-<span class="c1"># filter only the current experiment data</span>
-<span class="n">cur_experiment</span> <span class="o">=</span> <span class="n">df_experiments</span><span class="p">[</span><span class="n">df_experiments</span><span class="p">[</span><span class="s1">'data file'</span><span class="p">]</span> <span class="o">==</span> <span class="n">cur_file_name</span><span class="p">]</span>
-<span class="n">check_df_size_after_filter</span><span class="p">(</span><span class="n">cur_experiment</span><span class="p">,</span> <span class="n">FILE_EXPERIMENTS_METADATA</span><span class="p">,</span> <span class="s1">'experiments'</span><span class="p">)</span>
-<span class="n">membrane_model</span> <span class="o">=</span> <span class="n">cur_experiment</span><span class="p">[</span><span class="s1">'membrane model'</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-<span class="c1"># filter only the used membrane data</span>
-<span class="n">cur_membrane</span> <span class="o">=</span> <span class="n">df_membranes</span><span class="p">[</span><span class="n">df_membranes</span><span class="p">[</span><span class="s1">'membrane model'</span><span class="p">]</span> <span class="o">==</span> <span class="n">membrane_model</span><span class="p">]</span>
-<span class="n">check_df_size_after_filter</span><span class="p">(</span><span class="n">cur_membrane</span><span class="p">,</span> <span class="n">FILE_MEMBRANES_METADATA</span><span class="p">,</span> <span class="s1">'memebranes'</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [6]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
@@ -7673,7 +7654,7 @@ output file:
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [7]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [6]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="n">df</span><span class="p">[</span><span class="s1">'initial feed concentration [g/L]'</span><span class="p">]</span> <span class="o">=</span> <span class="n">cur_experiment</span><span class="p">[</span><span class="s1">'feed concentration g/L'</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
@@ -7687,7 +7668,7 @@ output file:
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [8]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [7]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="n">num_membrane_used</span> <span class="o">=</span> <span class="n">cur_experiment</span><span class="p">[</span><span class="s1">'number of membranes used'</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
@@ -7705,7 +7686,7 @@ output file:
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [9]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [8]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="n">df</span><span class="p">[</span><span class="s1">'prs permeate + ATM [Pa]'</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">'prs permeate [kPa]'</span><span class="p">]</span> <span class="o">+</span> <span class="n">PRS_ATM_kpa</span><span class="p">)</span> <span class="o">*</span> <span class="mi">1000</span>
@@ -7722,7 +7703,7 @@ output file:
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [10]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [9]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="c1"># [L / h]   = [m^2]    * [L / m^2 h]</span>
@@ -7738,7 +7719,7 @@ output file:
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [11]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [10]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="c1"># PRS_IN = density [kg / m^3] * gravity [m / s^2] * height [m] = 997 * 9.81 * 1.0 = 9780,57 [Pa] = 9,78 [kPa]</span>
@@ -7754,7 +7735,7 @@ output file:
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [12]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [11]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="c1"># res_tot = res_mbn + res_conc_pol + res_fouling</span>
@@ -7771,7 +7752,7 @@ output file:
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [13]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [12]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="n">df</span><span class="p">[</span><span class="s1">'viscosity permeate at 20°C [Pa s]'</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">apply</span><span class="p">((</span><span class="k">lambda</span> <span class="n">x</span> <span class="p">:</span> <span class="n">calc_viscosity</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="n">pressure_Pa</span><span class="o">=</span><span class="mi">1000</span><span class="o">*</span><span class="p">(</span><span class="n">PRS_ATM_kpa</span><span class="o">+</span><span class="n">x</span><span class="p">[</span><span class="s1">'prs permeate [kPa]'</span><span class="p">]),</span> <span class="n">element</span><span class="o">=</span><span class="s1">'Water'</span><span class="p">)),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
@@ -7786,7 +7767,7 @@ output file:
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [14]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [13]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="c1"># add bool flag when machine is ON</span>
@@ -7806,7 +7787,7 @@ output file:
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [15]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [14]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="c1"># add a time in minutes column</span>
@@ -7821,7 +7802,7 @@ output file:
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [16]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [15]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="c1"># normalize flux at a constant TMP</span>
@@ -7836,7 +7817,7 @@ output file:
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [17]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [16]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="c1"># TODO</span>
@@ -7856,7 +7837,7 @@ output file:
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [18]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [17]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="c1"># start from t=1</span>
@@ -7871,7 +7852,7 @@ output file:
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [19]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [18]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="n">df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">out_file_path</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
@@ -7885,7 +7866,7 @@ output file:
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [20]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [19]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="c1">#############################</span>
