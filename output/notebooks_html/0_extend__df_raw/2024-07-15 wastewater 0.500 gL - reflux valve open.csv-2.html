@@ -7557,6 +7557,7 @@ plot_scatterplot_matrix: False
 use_default_arima_params: True
 default_arima_params: [1, 1, 0]
 include_arima_simulations_in_analysis: True
+drop_off_rows: True
 include_outliers: True
 mark_outliers: True
 </pre>
@@ -7773,10 +7774,10 @@ output file:
 <div class="highlight hl-ipython3"><pre><span></span><span class="c1"># add bool flag when machine is ON</span>
 <span class="n">df</span><span class="p">[</span><span class="s1">'is_ON'</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">'TMP [kPa]'</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mi">5</span>
 <span class="c1"># reset to zero flux, flow, and resistance columns when the machine is OFF (TMP &lt; 5)</span>
-<span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span> <span class="p">:</span>
-    <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s2">"^(flow)|(flux)|(res).*"</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span> <span class="p">:</span>
-        <span class="c1">#print(f" - {c}")</span>
-        <span class="n">df</span><span class="p">[</span><span class="n">c</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">reset_cols_if_is_OFF</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="s1">'is_ON'</span><span class="p">,</span> <span class="n">c</span><span class="p">))</span>
+<span class="c1"># for c in df.columns :</span>
+<span class="c1">#     if re.match("^(flow)|(flux)|(res).*", c) :</span>
+<span class="c1">#         #print(f" - {c}")</span>
+<span class="c1">#         df[c] = df.apply(reset_cols_if_is_OFF, axis=1, args=('is_ON', c))</span>
 </pre></div>
 </div>
 </div>

@@ -84,7 +84,7 @@ def init_chars(n, char='#') :
 
 def run_all() : 
     j = 0
-    for notebook in notebooks[:2] :
+    for notebook in notebooks[:3] :
         f_ipynb = f'src/{notebook}.ipynb'
         n_chars = 1
         print("\n###################################################")

@@ -14,6 +14,7 @@
     0
   ],
   "include_arima_simulations_in_analysis": true,
+  "drop_off_rows": true,
   "include_outliers": true,
   "mark_outliers": true
 }

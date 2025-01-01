@@ -157,6 +157,7 @@ DEFAULT_PARAMETERS = {
     "use_default_arima_params": True,
     "default_arima_params": (1,1,0),
     "include_arima_simulations_in_analysis": True,
+    "drop_off_rows" : True,
     "include_outliers" : True,
     "mark_outliers" : True
 }

@@ -346,7 +346,7 @@ def add_column_if_missing(df, c='is_outlier', v=False) :
 # def find_TMP_groups(df) :
 # TODO
 
-def identify_all_outliers(df, drop_outliers=True, log=True) :
+def identify_all_outliers(df, drop_off_rows=True, drop_outliers=True, log=True) :
     args = {}
     args['log'] = log
     df = invoke__identify_outliers(df, cols=['is_ON'],            drop_fun=indentify_outliers__machine_OFF,    args=args)
@@ -354,7 +354,10 @@ def identify_all_outliers(df, drop_outliers=True, log=True) :
     df = invoke__identify_outliers(df, cols=['prs feed_2 [kPa]'], drop_fun=indentify_outliers__far_neighbours, args=args)
     df = invoke__identify_outliers(df, cols=['flux [L/m^2h]'],    drop_fun=indentify_outliers__out_range,      args=args)
     #df = invoke__identify_outliers(df, cols=['flux [L/m^2h]'],    drop_fun=indentify_outliers__initial_jumps)
+    if drop_off_rows :
+        df = df[df['is_ON'] == True].reset_index(drop=True)
     if drop_outliers :
+        # note: outliers include also off rows
         df = df[df['is_outlier'] == False].reset_index(drop=True)
     return df
 
