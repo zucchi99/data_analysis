@@ -100,28 +100,11 @@ NON_RAW_PATHS = list(set(ALL_PATHS) - set(RAW_DATA_PATHS))
 
 ############################# CONSTANTS
 
-x_axis   = ('time [m]', 'datetime', 'index')
-x_format = (None,       '%H:%M',    None)
-TIME_MINS = 0
-DATE_TIME = 1
-ROW_IDX_AS_TIME = 2
-
-# by default: only one global
-DEFAULT_CONC_GROUP = {
-    0 : ((None, None), 'unknown')   
-}
-
-# key file names are the one in folder PATH_SENSORS_DATA_RAW_UF
-CONCENTRATION_INTERVALS = {
-    "2023-11-08 clean water.csv" : {
-        0 : ((None, None), 'clean water')
-    },
-    "2023-11-09 clean + dirty water.csv" : {
-        0 : ((  6,   20), 'clean water'),
-        1 : (( 20,   79), 'dirty water'),
-        2 : (( 79,  106), 'dirty water'),
-        3 : ((154, None), 'dirty water')
-    }
+X_AXIS_FORMAT = {
+    # column -> format
+    'time [m]'  : None,
+    'datetime'  : '%H:%M',
+    'index'     : None
 }
 
 # key file names are the one in folder PATH_SENSORS_DATA_EXT_UF_V1
@@ -163,6 +146,7 @@ TMP_INTERVALS = {
 }
 
 DEFAULT_PARAMETERS = {
+    "x_axis" : "time [m]",
     "file_idx_uppaal" : 0,
     "file_idx" : 0,
     "tmp_idx" : 0,
@@ -173,6 +157,8 @@ DEFAULT_PARAMETERS = {
     "use_default_arima_params": True,
     "default_arima_params": (1,1,0),
     "include_arima_simulations_in_analysis": True,
+    "include_outliers" : True,
+    "mark_outliers" : True
 }
 
 ALL_N       = [0,      1,    1.5, 2 ]
@@ -217,3 +203,6 @@ PRS_ATM_kpa = 101.325
 # mark point as outlier and drop row if res < MIN_RES or res > MAX_RES
 MIN_RES = 1e12
 MAX_RES = 1e15
+
+# normalize flux at a constant TMP value
+CONST_TMP = 330

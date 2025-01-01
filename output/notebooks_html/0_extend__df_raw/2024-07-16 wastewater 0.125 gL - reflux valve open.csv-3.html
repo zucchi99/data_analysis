@@ -7532,10 +7532,7 @@ a.anchor-link {
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="n">params</span> <span class="o">=</span> <span class="n">read_parameters</span><span class="p">()</span>
-<span class="n">subfolder</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">'subfolder'</span><span class="p">]</span>
 <span class="n">file_idx</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">'file_idx'</span><span class="p">]</span>
-<span class="n">initial_feed_volume_L</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">'initial_feed_volume_L'</span><span class="p">]</span>
-<span class="n">reset_columns_when_OFF</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">'reset_columns_when_OFF'</span><span class="p">]</span>
 </pre></div>
 </div>
 </div>
@@ -7549,14 +7546,12 @@ a.anchor-link {
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
 <pre>parameters:
-subfolder: UF/
-file_idx_uppaal: 0
-file_idx: 0
+x_axis: time [m]
+file_idx_uppaal: 3
+file_idx: 3
 tmp_idx: 0
-initial_feed_volume_L: 100
+log: True
 reset_columns_when_OFF: True
-drop_initial_final_off_rows: True
-drop_off_rows: True
 drop_outliers: True
 plot_scatterplot_matrix: False
 use_default_arima_params: True
@@ -7576,8 +7571,10 @@ include_arima_simulations_in_analysis: True
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="n">in_folder</span> <span class="o">=</span> <span class="n">PATH_SENSORS_DATA_RAW_UF</span>
-<span class="n">out_folder</span> <span class="o">=</span> <span class="n">PATH_SENSORS_DATA_EXT_UF_V1</span>
 <span class="n">cur_file</span><span class="p">,</span> <span class="n">file_path</span> <span class="o">=</span> <span class="n">get_input_file</span><span class="p">(</span><span class="n">in_folder</span><span class="o">=</span><span class="n">in_folder</span><span class="p">,</span> <span class="n">in_file_idx</span><span class="o">=</span><span class="n">file_idx</span><span class="p">,</span> <span class="n">log</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">out_folder</span> <span class="o">=</span> <span class="n">PATH_SENSORS_DATA_EXT_UF_V1</span>
+<span class="n">out_file_path</span> <span class="o">=</span> <span class="n">out_folder</span> <span class="o">+</span> <span class="n">cur_file</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">output file:</span><span class="se">\n</span><span class="si">{</span><span class="n">out_file_path</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -7591,12 +7588,17 @@ include_arima_simulations_in_analysis: True
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
 <pre>file list:
-0 /app/data/from_sensors/0_raw/UF/20231108 clean water.csv
-1 /app/data/from_sensors/0_raw/UF/20240711 clean water - reflux valve closed.csv
-2 /app/data/from_sensors/0_raw/UF/20240712 clean water - reflux valve open.csv
+0 /app/data/from_sensors/0_raw/UF/2024-07-11 tap water - reflux valve closed.csv
+1 /app/data/from_sensors/0_raw/UF/2024-07-12 tap water - reflux valve open.csv
+2 /app/data/from_sensors/0_raw/UF/2024-07-15 wastewater 0.500 gL - reflux valve open.csv
+3 /app/data/from_sensors/0_raw/UF/2024-07-16 wastewater 0.125 gL - reflux valve open.csv
+4 /app/data/from_sensors/0_raw/UF/2024-07-16 wastewater 0.250 gL - reflux valve open.csv
 
 input file:
-/app/data/from_sensors/0_raw/UF/20231108 clean water.csv
+/app/data/from_sensors/0_raw/UF/2024-07-16 wastewater 0.125 gL - reflux valve open.csv
+
+output file:
+/app/data/from_sensors/1_extended/UF/v1/2024-07-16 wastewater 0.125 gL - reflux valve open.csv
 </pre>
 </div>
 </div>
@@ -7610,13 +7612,14 @@ input file:
 <div class="jp-InputPrompt jp-InputArea-prompt">In [4]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">df_conc</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="n">FILE_CONCENTRATIONS_DATA</span><span class="p">)</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">df_experiments</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="n">FILE_EXPERIMENTS_METADATA</span><span class="p">)</span>
+<span class="n">df_membranes</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="n">FILE_MEMBRANES_METADATA</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -7624,35 +7627,15 @@ input file:
 <div class="jp-InputPrompt jp-InputArea-prompt">In [5]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">([</span> <span class="nb">type</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span> <span class="p">])</span>
-<span class="n">df</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="n">UF_COLUMNS</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="n">df</span><span class="p">[</span><span class="s1">'datetime'</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s2">"date"</span><span class="p">]</span> <span class="o">+</span> <span class="s2">" "</span> <span class="o">+</span> <span class="n">df</span><span class="p">[</span><span class="s2">"time"</span><span class="p">],</span> <span class="nb">format</span><span class="o">=</span><span class="s1">'%Y/%m/</span><span class="si">%d</span><span class="s1"> %H:%M:%S'</span><span class="p">)</span>
-<span class="n">df</span><span class="p">[</span><span class="s1">'time span [s]'</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">'datetime'</span><span class="p">]</span><span class="o">.</span><span class="n">diff</span><span class="p">()</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">total_seconds</span><span class="p">()</span>
-<span class="n">df</span><span class="p">[</span><span class="s1">'time span [s]'</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">'time span [s]'</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span> <span class="p">:</span> <span class="mi">60</span> <span class="k">if</span> <span class="p">(</span><span class="mi">58</span> <span class="o">&lt;=</span> <span class="n">x</span> <span class="ow">and</span> <span class="n">x</span> <span class="o">&lt;=</span> <span class="mi">62</span><span class="p">)</span> <span class="k">else</span> <span class="n">x</span><span class="p">)</span> <span class="c1"># 1-2 secs errors are removed</span>
-<span class="n">df</span><span class="p">[</span><span class="s1">'tank liters [L]'</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">'tank liters [%]'</span><span class="p">]</span> <span class="o">*</span> <span class="n">FEED_TANK_CAPACITY_LITERS</span> <span class="o">/</span> <span class="mi">100</span>
-<span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="s1">'time span [s]'</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
-<span class="n">DATE</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="s1">'datetime'</span><span class="p">]</span><span class="o">.</span><span class="n">date</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
-<span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">change_column_index</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span> <span class="s1">'TMP [bar]'</span><span class="p">,</span> <span class="mi">7</span><span class="p">)]</span> 
-<span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">change_column_index</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span> <span class="s1">'datetime'</span><span class="p">,</span> <span class="mi">0</span><span class="p">)]</span> 
-<span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">change_column_index</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span> <span class="s1">'time span [s]'</span><span class="p">,</span> <span class="mi">1</span><span class="p">)]</span>
-<span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">change_column_index</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span> <span class="s1">'tank liters [L]'</span><span class="p">,</span> <span class="mi">11</span><span class="p">)]</span>
-<span class="n">df</span> <span class="o">=</span> <span class="n">change_unit_measure</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
-<span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">'date'</span><span class="p">,</span> <span class="s1">'time'</span><span class="p">,</span> <span class="s1">'millisecond [ms]'</span><span class="p">])</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">cur_file_name</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s1">'.csv'</span><span class="p">,</span> <span class="s1">''</span><span class="p">,</span> <span class="n">cur_file</span><span class="p">)</span>
+<span class="c1"># filter only the current experiment data</span>
+<span class="n">cur_experiment</span> <span class="o">=</span> <span class="n">df_experiments</span><span class="p">[</span><span class="n">df_experiments</span><span class="p">[</span><span class="s1">'data file'</span><span class="p">]</span> <span class="o">==</span> <span class="n">cur_file_name</span><span class="p">]</span>
+<span class="n">check_df_size_after_filter</span><span class="p">(</span><span class="n">cur_experiment</span><span class="p">,</span> <span class="n">FILE_EXPERIMENTS_METADATA</span><span class="p">,</span> <span class="s1">'experiments'</span><span class="p">)</span>
+<span class="n">membrane_model</span> <span class="o">=</span> <span class="n">cur_experiment</span><span class="p">[</span><span class="s1">'membrane model'</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="c1"># filter only the used membrane data</span>
+<span class="n">cur_membrane</span> <span class="o">=</span> <span class="n">df_membranes</span><span class="p">[</span><span class="n">df_membranes</span><span class="p">[</span><span class="s1">'membrane model'</span><span class="p">]</span> <span class="o">==</span> <span class="n">membrane_model</span><span class="p">]</span>
+<span class="n">check_df_size_after_filter</span><span class="p">(</span><span class="n">cur_membrane</span><span class="p">,</span> <span class="n">FILE_MEMBRANES_METADATA</span><span class="p">,</span> <span class="s1">'memebranes'</span><span class="p">)</span>
 </pre></div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell-outputWrapper">
-<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
-</div>
-<div class="jp-OutputArea jp-Cell-outputArea">
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>[&lt;class 'str'&gt;, &lt;class 'str'&gt;, &lt;class 'str'&gt;, &lt;class 'str'&gt;, &lt;class 'str'&gt;, &lt;class 'str'&gt;, &lt;class 'str'&gt;, &lt;class 'str'&gt;, &lt;class 'str'&gt;, &lt;class 'str'&gt;, &lt;class 'str'&gt;, &lt;class 'str'&gt;, &lt;class 'str'&gt;]
-</pre>
 </div>
 </div>
 </div>
@@ -7665,8 +7648,21 @@ input file:
 <div class="jp-InputPrompt jp-InputArea-prompt">In [6]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">out_file</span> <span class="o">=</span> <span class="n">DATE</span> <span class="o">+</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s2">"^[0-9]*"</span><span class="p">,</span> <span class="s2">""</span><span class="p">,</span> <span class="n">cur_file</span><span class="p">)</span>
-<span class="n">out_file_path</span> <span class="o">=</span> <span class="n">out_folder</span> <span class="o">+</span> <span class="n">out_file</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+<span class="c1"># print([ type(c) for c in df.columns ])</span>
+<span class="n">df</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="n">UF_COLUMNS</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">df</span><span class="p">[</span><span class="s1">'datetime'</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s2">"date"</span><span class="p">]</span> <span class="o">+</span> <span class="s2">" "</span> <span class="o">+</span> <span class="n">df</span><span class="p">[</span><span class="s2">"time"</span><span class="p">],</span> <span class="nb">format</span><span class="o">=</span><span class="s1">'%Y/%m/</span><span class="si">%d</span><span class="s1"> %H:%M:%S'</span><span class="p">)</span>
+<span class="n">df</span><span class="p">[</span><span class="s1">'time span [s]'</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">'datetime'</span><span class="p">]</span><span class="o">.</span><span class="n">diff</span><span class="p">()</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">total_seconds</span><span class="p">()</span>
+<span class="n">df</span><span class="p">[</span><span class="s1">'time span [s]'</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">'time span [s]'</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span> <span class="p">:</span> <span class="mi">60</span> <span class="k">if</span> <span class="p">(</span><span class="mi">58</span> <span class="o">&lt;=</span> <span class="n">x</span> <span class="ow">and</span> <span class="n">x</span> <span class="o">&lt;=</span> <span class="mi">62</span><span class="p">)</span> <span class="k">else</span> <span class="n">x</span><span class="p">)</span> <span class="c1"># 1-2 secs errors are removed</span>
+<span class="c1"># df['tank liters [L]'] = df['tank liters [%]'] * FEED_TANK_CAPACITY_LITERS / 100</span>
+<span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="s1">'time span [s]'</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+<span class="n">DATE</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="s1">'datetime'</span><span class="p">]</span><span class="o">.</span><span class="n">date</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">change_column_index</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span> <span class="s1">'TMP [bar]'</span><span class="p">,</span> <span class="mi">7</span><span class="p">)]</span> 
+<span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">change_column_index</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span> <span class="s1">'datetime'</span><span class="p">,</span> <span class="mi">0</span><span class="p">)]</span> 
+<span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">change_column_index</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span> <span class="s1">'time span [s]'</span><span class="p">,</span> <span class="mi">1</span><span class="p">)]</span>
+<span class="c1"># df = df[change_column_index(df.columns.tolist(), 'tank liters [L]', 11)]</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">change_unit_measure</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">'date'</span><span class="p">,</span> <span class="s1">'time'</span><span class="p">,</span> <span class="s1">'millisecond [ms]'</span><span class="p">])</span>
 </pre></div>
 </div>
 </div>
@@ -7680,14 +7676,13 @@ input file:
 <div class="jp-InputPrompt jp-InputArea-prompt">In [7]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># filter df_conc by date</span>
-<span class="n">df_conc</span> <span class="o">=</span> <span class="n">df_conc</span><span class="p">[</span><span class="n">df_conc</span><span class="p">[</span><span class="s1">'date'</span><span class="p">]</span> <span class="o">==</span> <span class="n">DATE</span><span class="p">]</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">df</span><span class="p">[</span><span class="s1">'initial feed concentration [g/L]'</span><span class="p">]</span> <span class="o">=</span> <span class="n">cur_experiment</span><span class="p">[</span><span class="s1">'feed concentration g/L'</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 </pre></div>
 </div>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -7695,33 +7690,17 @@ input file:
 <div class="jp-InputPrompt jp-InputArea-prompt">In [8]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s2">"area tot included!"</span><span class="p">)</span>
-<span class="p">(</span><span class="n">mbn_model</span><span class="p">,</span> <span class="n">mbn_num</span><span class="p">)</span> <span class="o">=</span> <span class="n">MEMBRANE_USED</span><span class="p">[</span><span class="n">DATE</span><span class="p">]</span>
-<span class="n">mbn_data</span> <span class="o">=</span> <span class="n">MEMBRANES</span><span class="p">[</span><span class="n">mbn_model</span><span class="p">]</span>
-<span class="n">mbn_area</span> <span class="o">=</span> <span class="n">mbn_data</span><span class="p">[</span><span class="s1">'area'</span><span class="p">]</span>
-<span class="n">A</span> <span class="o">=</span> <span class="n">mbn_area</span> <span class="o">*</span> <span class="n">mbn_num</span> <span class="c1"># m^2</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"date: </span><span class="si">{</span><span class="n">DATE</span><span class="si">}</span><span class="s2">, membrane: </span><span class="si">{</span><span class="n">mbn_data</span><span class="p">[</span><span class="s1">'producer'</span><span class="p">]</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">mbn_model</span><span class="si">}</span><span class="s2">, number of membranes: </span><span class="si">{</span><span class="n">mbn_num</span><span class="si">}</span><span class="s2">, total area: </span><span class="si">{</span><span class="n">A</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">num_membrane_used</span> <span class="o">=</span> <span class="n">cur_experiment</span><span class="p">[</span><span class="s1">'number of membranes used'</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">membrane_area</span> <span class="o">=</span> <span class="n">cur_membrane</span><span class="p">[</span><span class="s1">'area [m2]'</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">A</span> <span class="o">=</span> <span class="n">membrane_area</span> <span class="o">*</span> <span class="n">num_membrane_used</span> <span class="c1"># m^2</span>
+<span class="c1"># print(f"membrane: {cur_membrane['manufacturer'].values[0]}-{membrane_model}, number of membranes used: {num_membrane_used}, total area: {A} [m^2]")</span>
 <span class="n">df</span><span class="p">[</span><span class="s1">'area tot [m^2]'</span><span class="p">]</span> <span class="o">=</span> <span class="n">A</span>
 </pre></div>
 </div>
 </div>
 </div>
 </div>
-<div class="jp-Cell-outputWrapper">
-<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
-</div>
-<div class="jp-OutputArea jp-Cell-outputArea">
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>area tot included!
-date: 2023-11-08, membrane: LiqTech-COM0251178, number of membranes: 3, total area: 0.99
-</pre>
-</div>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -7729,8 +7708,7 @@ date: 2023-11-08, membrane: LiqTech-COM0251178, number of membranes: 3, total ar
 <div class="jp-InputPrompt jp-InputArea-prompt">In [9]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s2">"viscosity included!"</span><span class="p">)</span>
-<span class="n">df</span><span class="p">[</span><span class="s1">'prs permeate + ATM [Pa]'</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">'prs permeate [kPa]'</span><span class="p">]</span> <span class="o">+</span> <span class="n">PRS_ATM_kpa</span><span class="p">)</span> <span class="o">*</span> <span class="mi">1000</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">df</span><span class="p">[</span><span class="s1">'prs permeate + ATM [Pa]'</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">'prs permeate [kPa]'</span><span class="p">]</span> <span class="o">+</span> <span class="n">PRS_ATM_kpa</span><span class="p">)</span> <span class="o">*</span> <span class="mi">1000</span>
 <span class="n">df</span><span class="p">[</span><span class="s1">'viscosity permeate [Pa s]'</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">apply</span><span class="p">((</span><span class="k">lambda</span> <span class="n">x</span> <span class="p">:</span> <span class="n">calc_viscosity</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="s1">'temperature [°C]'</span><span class="p">],</span> <span class="n">pressure_Pa</span><span class="o">=</span><span class="n">x</span><span class="p">[</span><span class="s1">'prs permeate + ATM [Pa]'</span><span class="p">],</span> <span class="n">element</span><span class="o">=</span><span class="s1">'Water'</span><span class="p">)),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">change_column_index</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span> <span class="s1">'viscosity permeate [Pa s]'</span><span class="p">,</span> <span class="mi">8</span><span class="p">)]</span>
 <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">'prs permeate + ATM [Pa]'</span><span class="p">])</span>
@@ -7739,20 +7717,7 @@ date: 2023-11-08, membrane: LiqTech-COM0251178, number of membranes: 3, total ar
 </div>
 </div>
 </div>
-<div class="jp-Cell-outputWrapper">
-<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
-</div>
-<div class="jp-OutputArea jp-Cell-outputArea">
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>viscosity included!
-</pre>
-</div>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -7760,24 +7725,10 @@ date: 2023-11-08, membrane: LiqTech-COM0251178, number of membranes: 3, total ar
 <div class="jp-InputPrompt jp-InputArea-prompt">In [10]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s2">"flux included!"</span><span class="p">)</span>
-<span class="c1"># [L / h]   = [m^2]    * [L / m^2 h]</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># [L / h]   = [m^2]    * [L / m^2 h]</span>
 <span class="c1"># flow_prmt = area_tot * flux ==&gt; flux = flow_prmt / area_tot</span>
 <span class="n">df</span><span class="p">[</span><span class="s1">'flux [L/m^2h]'</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">'flow permeate [L/h]'</span><span class="p">]</span> <span class="o">/</span> <span class="n">A</span>
 </pre></div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell-outputWrapper">
-<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
-</div>
-<div class="jp-OutputArea jp-Cell-outputArea">
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>flux included!
-</pre>
 </div>
 </div>
 </div>
@@ -7790,21 +7741,15 @@ date: 2023-11-08, membrane: LiqTech-COM0251178, number of membranes: 3, total ar
 <div class="jp-InputPrompt jp-InputArea-prompt">In [11]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># print("crossflow velocity included!")</span>
-
-<span class="c1"># [m/s]        = [m^3 / h]                 / (  [m^2]  * [s/h] )</span>
-<span class="c1"># vlct_crsflow = liters__to__m3(flow_feed) / (area_tot * SECS_PER_HRS);</span>
-<span class="c1"># df['vlct crsflow [m/s]'] = (df['flow feed [L/h]'] / (1000.0 * 3600.0)) / A</span>
-
-<span class="c1"># flow_rtnt_m3 = 0.25 * area_tot * (SECS_PER_HRS * vlct_crsflow) * mbn_diam / mbn_len</span>
-<span class="c1"># [m/s]                    =  [m^3 / h]                            / (  [s / h        ) / (   [m^2]  )</span>
-<span class="c1">#df['vlct crsflow 2 [m/s]'] = (mbn_len * df['flow retentate [L/h]'] / (1000.0 * 3600.0)) / (0.25 * A * (2 * mbn_radius))</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># PRS_IN = density [kg / m^3] * gravity [m / s^2] * height [m] = 997 * 9.81 * 1.0 = 9780,57 [Pa] = 9,78 [kPa]</span>
+<span class="n">df</span><span class="p">[</span><span class="s1">'prs input [kPa]'</span><span class="p">]</span> <span class="o">=</span> <span class="mf">10.0</span> <span class="c1">#TODO add this data into machines.xlsx</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">change_column_index</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span> <span class="s1">'prs input [kPa]'</span><span class="p">,</span> <span class="mi">2</span><span class="p">)]</span>
 </pre></div>
 </div>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -7812,38 +7757,7 @@ date: 2023-11-08, membrane: LiqTech-COM0251178, number of membranes: 3, total ar
 <div class="jp-InputPrompt jp-InputArea-prompt">In [12]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s2">"pressure input included!"</span><span class="p">)</span>
-<span class="c1"># PRS_IN = density [kg / m^3] * gravity [m / s^2] * height [m] = 997 * 9.81 * 1.0 = 9780,57 [Pa] = 9,78 [kPa]</span>
-<span class="n">df</span><span class="p">[</span><span class="s1">'prs input [kPa]'</span><span class="p">]</span> <span class="o">=</span> <span class="mf">10.0</span>
-<span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">change_column_index</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span> <span class="s1">'prs input [kPa]'</span><span class="p">,</span> <span class="mi">2</span><span class="p">)]</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell-outputWrapper">
-<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
-</div>
-<div class="jp-OutputArea jp-Cell-outputArea">
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>pressure input included!
-</pre>
-</div>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [13]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s2">"total resistance included!"</span><span class="p">)</span>
-<span class="c1"># res_tot = res_mbn + res_conc_pol + res_fouling</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># res_tot = res_mbn + res_conc_pol + res_fouling</span>
 <span class="c1"># flux = prs_TMP / (viscosity * res_tot) ==&gt; res_tot = prs_TMP / (viscosity_permeate * flux)</span>
 <span class="c1"># [1/m]             =     [kPa]       / ([m^3 / m^2 s]                              * [kPa s])</span>
 <span class="n">df</span><span class="p">[</span><span class="s1">'res tot [1/m]'</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">'TMP [kPa]'</span><span class="p">]</span> <span class="o">/</span> <span class="p">((</span><span class="n">df</span><span class="p">[</span><span class="s1">'flux [L/m^2h]'</span><span class="p">]</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1000.0</span> <span class="o">*</span> <span class="mf">3600.0</span><span class="p">))</span> <span class="o">*</span> <span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">'viscosity permeate [Pa s]'</span><span class="p">]</span> <span class="o">/</span> <span class="mf">1000.0</span><span class="p">))</span>
@@ -7852,20 +7766,22 @@ date: 2023-11-08, membrane: LiqTech-COM0251178, number of membranes: 3, total ar
 </div>
 </div>
 </div>
-<div class="jp-Cell-outputWrapper">
-<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
-<div class="jp-OutputArea jp-Cell-outputArea">
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>total resistance included!
-</pre>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [13]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">df</span><span class="p">[</span><span class="s1">'viscosity permeate at 20°C [Pa s]'</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">apply</span><span class="p">((</span><span class="k">lambda</span> <span class="n">x</span> <span class="p">:</span> <span class="n">calc_viscosity</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="n">pressure_Pa</span><span class="o">=</span><span class="mi">1000</span><span class="o">*</span><span class="p">(</span><span class="n">PRS_ATM_kpa</span><span class="o">+</span><span class="n">x</span><span class="p">[</span><span class="s1">'prs permeate [kPa]'</span><span class="p">]),</span> <span class="n">element</span><span class="o">=</span><span class="s1">'Water'</span><span class="p">)),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">df</span><span class="p">[</span><span class="s1">'flux at 20° [L/m^2h]'</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">'flux [L/m^2h]'</span><span class="p">]</span> <span class="o">*</span> <span class="n">df</span><span class="p">[</span><span class="s1">'viscosity permeate [Pa s]'</span><span class="p">]</span> <span class="o">/</span> <span class="n">df</span><span class="p">[</span><span class="s1">'viscosity permeate at 20°C [Pa s]'</span><span class="p">]</span>
+</pre></div>
 </div>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -7873,28 +7789,19 @@ date: 2023-11-08, membrane: LiqTech-COM0251178, number of membranes: 3, total ar
 <div class="jp-InputPrompt jp-InputArea-prompt">In [14]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">df</span><span class="p">[</span><span class="s1">'viscosity permeate at 20°C [Pa s]'</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">apply</span><span class="p">((</span><span class="k">lambda</span> <span class="n">x</span> <span class="p">:</span> <span class="n">calc_viscosity</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="n">pressure_Pa</span><span class="o">=</span><span class="mi">1000</span><span class="o">*</span><span class="p">(</span><span class="n">PRS_ATM_kpa</span><span class="o">+</span><span class="n">x</span><span class="p">[</span><span class="s1">'prs permeate [kPa]'</span><span class="p">]),</span> <span class="n">element</span><span class="o">=</span><span class="s1">'Water'</span><span class="p">)),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-<span class="n">df</span><span class="p">[</span><span class="s1">'flux at 20° [L/m^2h]'</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">'flux [L/m^2h]'</span><span class="p">]</span> <span class="o">*</span> <span class="n">df</span><span class="p">[</span><span class="s1">'viscosity permeate [Pa s]'</span><span class="p">]</span> <span class="o">/</span> <span class="n">df</span><span class="p">[</span><span class="s1">'viscosity permeate at 20°C [Pa s]'</span><span class="p">]</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">'permeate viscosity and flux assuming constant temperature of 20°C included!'</span><span class="p">)</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># add bool flag when machine is ON</span>
+<span class="n">df</span><span class="p">[</span><span class="s1">'is_ON'</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">'TMP [kPa]'</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mi">5</span>
+<span class="c1"># reset to zero flux, flow, and resistance columns when the machine is OFF (TMP &lt; 5)</span>
+<span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span> <span class="p">:</span>
+    <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s2">"^(flow)|(flux)|(res).*"</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span> <span class="p">:</span>
+        <span class="c1">#print(f" - {c}")</span>
+        <span class="n">df</span><span class="p">[</span><span class="n">c</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">reset_cols_if_is_OFF</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="s1">'is_ON'</span><span class="p">,</span> <span class="n">c</span><span class="p">))</span>
 </pre></div>
 </div>
 </div>
 </div>
 </div>
-<div class="jp-Cell-outputWrapper">
-<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
-</div>
-<div class="jp-OutputArea jp-Cell-outputArea">
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>permeate viscosity and flux assuming constant temperature of 20°C included!
-</pre>
-</div>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -7902,28 +7809,14 @@ date: 2023-11-08, membrane: LiqTech-COM0251178, number of membranes: 3, total ar
 <div class="jp-InputPrompt jp-InputArea-prompt">In [15]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s2">"is_ON flag included!"</span><span class="p">)</span>
-<span class="c1"># add bool flag when machine is ON</span>
-<span class="n">df</span><span class="p">[</span><span class="s1">'is_ON'</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">'TMP [kPa]'</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mi">5</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># add a time in minutes column</span>
+<span class="n">df</span><span class="p">[</span><span class="s1">'time [m]'</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">'time span [s]'</span><span class="p">]</span><span class="o">.</span><span class="n">cumsum</span><span class="p">()</span> <span class="o">/</span> <span class="mi">60</span>
 </pre></div>
 </div>
 </div>
 </div>
 </div>
-<div class="jp-Cell-outputWrapper">
-<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
-</div>
-<div class="jp-OutputArea jp-Cell-outputArea">
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>is_ON flag included!
-</pre>
-</div>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -7931,43 +7824,14 @@ date: 2023-11-08, membrane: LiqTech-COM0251178, number of membranes: 3, total ar
 <div class="jp-InputPrompt jp-InputArea-prompt">In [16]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="k">if</span> <span class="n">reset_columns_when_OFF</span> <span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"setting to zero the following columns when the machine is OFF:"</span><span class="p">)</span>
-    <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span> <span class="p">:</span>
-        <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s2">"^(flow)|(flux)|(res).*"</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span> <span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">" - </span><span class="si">{</span><span class="n">c</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-            <span class="n">df</span><span class="p">[</span><span class="n">c</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">reset_cols_if_is_OFF</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="s1">'is_ON'</span><span class="p">,</span> <span class="n">c</span><span class="p">))</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># normalize flux at a constant TMP</span>
+<span class="n">df</span><span class="p">[</span><span class="sa">f</span><span class="s1">'flux at 20° TMP=</span><span class="si">{</span><span class="n">CONST_TMP</span><span class="si">}</span><span class="s1"> [L/m^2h]'</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">'flux at 20° [L/m^2h]'</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">CONST_TMP</span> <span class="o">/</span> <span class="n">df</span><span class="p">[</span><span class="s1">'TMP [kPa]'</span><span class="p">])</span>
 </pre></div>
 </div>
 </div>
 </div>
 </div>
-<div class="jp-Cell-outputWrapper">
-<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
-</div>
-<div class="jp-OutputArea jp-Cell-outputArea">
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>setting to zero the following columns when the machine is OFF:
- - flow feed [L/h]
- - flow permeate [L/h]
- - flow retentate [L/h]
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre> - flux [L/m^2h]
- - res tot [1/m]
- - flux at 20° [L/m^2h]
-</pre>
-</div>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -7975,41 +7839,14 @@ date: 2023-11-08, membrane: LiqTech-COM0251178, number of membranes: 3, total ar
 <div class="jp-InputPrompt jp-InputArea-prompt">In [17]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># add empty columns</span>
-<span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">'vol feed [L]'</span><span class="p">,</span> <span class="s1">'vol permeate [L]'</span><span class="p">,</span> <span class="s1">'delta vol permeate [L]'</span><span class="p">,</span> <span class="s1">'time [m]'</span><span class="p">]</span> <span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">c</span><span class="si">}</span><span class="s2"> included!"</span><span class="p">)</span>
-    <span class="n">df</span><span class="p">[</span><span class="n">c</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
-<span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">change_column_index</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span> <span class="s1">'time [m]'</span><span class="p">,</span> <span class="mi">2</span><span class="p">)]</span> 
-<span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="s1">'vol feed [L]'</span><span class="p">]</span> <span class="o">=</span> <span class="n">initial_feed_volume_L</span>
-<span class="c1"># iterate on rows to calculate values</span>
-<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">)):</span>
-    <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="s1">'time [m]'</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="s1">'time [m]'</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="s1">'time span [s]'</span><span class="p">]</span> <span class="o">/</span> <span class="mi">60</span><span class="p">)</span>
-    <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="s1">'delta vol permeate [L]'</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="s1">'flow permeate [L/h]'</span><span class="p">]</span> <span class="o">/</span> <span class="mi">60</span><span class="p">)</span>
-    <span class="k">if</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="s1">'time span [s]'</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="mi">180</span><span class="p">)</span> <span class="p">:</span>
-        <span class="c1"># update</span>
-        <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="s1">'vol permeate [L]'</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="s1">'vol permeate [L]'</span><span class="p">]</span> <span class="o">+</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="s1">'delta vol permeate [L]'</span><span class="p">]</span>
-        <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="s1">'vol feed [L]'</span><span class="p">]</span>     <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="s1">'vol feed [L]'</span><span class="p">]</span>     <span class="o">-</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="s1">'vol permeate [L]'</span><span class="p">]</span>
-    <span class="k">else</span> <span class="p">:</span> 
-        <span class="c1"># reset</span>
-        <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="s1">'vol permeate [L]'</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
-        <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="s1">'vol feed [L]'</span><span class="p">]</span>     <span class="o">=</span> <span class="n">initial_feed_volume_L</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># TODO</span>
+<span class="k">if</span> <span class="kc">False</span> <span class="p">:</span>
+    <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="s1">'TMP group'</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">))</span> <span class="p">:</span>
+        <span class="n">cur_group</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="s1">'TMP group'</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="mi">0</span> <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="s1">'changed TMP'</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="s1">'TMP group'</span><span class="p">]</span> <span class="o">=</span> <span class="n">cur_group</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">'added TMP groups'</span><span class="p">)</span>
 </pre></div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell-outputWrapper">
-<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
-</div>
-<div class="jp-OutputArea jp-Cell-outputArea">
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>vol feed [L] included!
-vol permeate [L] included!
-delta vol permeate [L] included!
-time [m] included!
-</pre>
 </div>
 </div>
 </div>
@@ -8020,193 +7857,6 @@ time [m] included!
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
 <div class="jp-InputPrompt jp-InputArea-prompt">In [18]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">increased_TMP</span> <span class="o">=</span> <span class="p">[]</span>
-<span class="n">decreased_TMP</span> <span class="o">=</span> <span class="p">[]</span>
-<span class="n">starting</span> <span class="o">=</span> <span class="p">[]</span>
-<span class="n">jumped_temperature</span> <span class="o">=</span> <span class="p">[]</span>
-<span class="k">if</span> <span class="n">DATE</span> <span class="o">==</span> <span class="s1">'2023-11-08'</span> <span class="p">:</span>
-    <span class="n">jumped_temperature</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-    <span class="n">starting</span>      <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">73</span><span class="p">]</span>
-    <span class="n">increased_TMP</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">73</span><span class="p">,</span> <span class="mi">74</span><span class="p">]</span>
-    <span class="n">decreased_TMP</span> <span class="o">=</span> <span class="p">[</span><span class="mi">86</span><span class="p">,</span> <span class="mi">125</span><span class="p">,</span> <span class="mi">158</span><span class="p">,</span> <span class="mi">186</span><span class="p">,</span> <span class="mi">217</span><span class="p">]</span>
-<span class="k">if</span> <span class="n">DATE</span> <span class="o">==</span> <span class="s1">'2023-11-09'</span> <span class="p">:</span>
-    <span class="n">jumped_temperature</span> <span class="o">=</span> <span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="mi">153</span><span class="p">,</span> <span class="mi">154</span><span class="p">]</span>
-    <span class="n">starting</span>      <span class="o">=</span> <span class="p">[</span><span class="mi">154</span><span class="p">]</span>
-    <span class="n">increased_TMP</span> <span class="o">=</span> <span class="p">[</span><span class="mi">6</span><span class="p">,</span> <span class="mi">37</span><span class="p">,</span> <span class="mi">42</span><span class="p">,</span> <span class="mi">48</span><span class="p">,</span> <span class="mi">56</span><span class="p">,</span> <span class="mi">87</span><span class="p">,</span> <span class="mi">90</span><span class="p">,</span> <span class="mi">91</span><span class="p">,</span> <span class="mi">93</span><span class="p">,</span> <span class="mi">95</span><span class="p">,</span> <span class="mi">154</span><span class="p">,</span> <span class="mi">155</span><span class="p">,</span> <span class="mi">161</span><span class="p">,</span> <span class="mi">165</span><span class="p">,</span> <span class="mi">168</span><span class="p">,</span> <span class="mi">171</span><span class="p">]</span>
-    <span class="n">decreased_TMP</span> <span class="o">=</span> <span class="p">[</span><span class="mi">27</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">99</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">183</span><span class="p">]</span>
-<span class="c1">#if DATE == '2023-11-10' :</span>
-<span class="c1">#    jumped_temperature = [1]</span>
-<span class="c1">#    starting      = [1]</span>
-<span class="c1">#    increased_TMP = [1, 2]</span>
-<span class="c1">#    decreased_TMP = []</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [19]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">df</span><span class="p">[</span><span class="s1">'increased TMP'</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
-<span class="n">df</span><span class="p">[</span><span class="s1">'decreased TMP'</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
-<span class="n">df</span><span class="p">[</span><span class="s1">'starting'</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
-<span class="n">df</span><span class="p">[</span><span class="s1">'jumped temperature'</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
-<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">increased_TMP</span> <span class="p">:</span>
-    <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="s1">'increased TMP'</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
-<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">decreased_TMP</span> <span class="p">:</span>
-    <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="s1">'decreased TMP'</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
-<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">starting</span> <span class="p">:</span>
-    <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="s1">'starting'</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
-<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">jumped_temperature</span> <span class="p">:</span>
-    <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="s1">'jumped temperature'</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
-<span class="n">df</span><span class="p">[</span><span class="s1">'changed TMP'</span><span class="p">]</span> <span class="o">=</span> <span class="p">((</span><span class="n">df</span><span class="p">[</span><span class="s1">'increased TMP'</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">'decreased TMP'</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">'starting'</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">))</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [20]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="s1">'TMP group'</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
-<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">))</span> <span class="p">:</span>
-    <span class="n">cur_group</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="s1">'TMP group'</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="mi">0</span> <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="s1">'changed TMP'</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">1</span><span class="p">)</span>
-    <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="s1">'TMP group'</span><span class="p">]</span> <span class="o">=</span> <span class="n">cur_group</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">'added TMP groups'</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell-outputWrapper">
-<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
-</div>
-<div class="jp-OutputArea jp-Cell-outputArea">
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>added TMP groups
-</pre>
-</div>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [21]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">get_concentration</span><span class="p">(</span><span class="n">df_conc</span><span class="p">,</span> <span class="n">sample_group</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">initial</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">sample_type</span><span class="o">=</span><span class="s1">'feed'</span><span class="p">)</span> <span class="p">:</span>
-    <span class="n">df_tmp</span> <span class="o">=</span> <span class="n">df_conc</span><span class="p">[(</span><span class="n">df_conc</span><span class="p">[</span><span class="s1">'sample type'</span><span class="p">]</span> <span class="o">==</span> <span class="n">sample_type</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">df_conc</span><span class="p">[</span><span class="s1">'initial'</span><span class="p">]</span> <span class="o">==</span> <span class="n">initial</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">df_conc</span><span class="p">[</span><span class="s1">'sample group'</span><span class="p">]</span> <span class="o">==</span> <span class="n">sample_group</span><span class="p">)]</span>
-    <span class="n">df_tmp</span> <span class="o">=</span> <span class="n">df_tmp</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
-    <span class="n">conc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">df_tmp</span><span class="o">.</span><span class="n">empty</span> <span class="p">:</span>
-        <span class="n">conc</span> <span class="o">=</span> <span class="n">df_tmp</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="s1">'concentration [g/L]'</span><span class="p">]</span>
-    <span class="k">return</span> <span class="n">conc</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [22]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># by default: only one global</span>
-<span class="n">conc_interval</span> <span class="o">=</span> <span class="n">CONCENTRATION_INTERVALS</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">out_file</span><span class="p">,</span> <span class="n">DEFAULT_CONC_GROUP</span><span class="p">)</span>
-<span class="k">for</span> <span class="p">(</span><span class="n">k</span><span class="p">,</span><span class="n">v</span><span class="p">)</span> <span class="ow">in</span> <span class="n">conc_interval</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell-outputWrapper">
-<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
-</div>
-<div class="jp-OutputArea jp-Cell-outputArea">
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>0: ((None, None), 'clean water')
-</pre>
-</div>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [23]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s2">"splitting df according to different concentrations"</span><span class="p">)</span>
-<span class="k">for</span> <span class="p">(</span><span class="n">group</span><span class="p">,</span> <span class="p">((</span><span class="n">l</span><span class="p">,</span><span class="n">r</span><span class="p">),</span> <span class="n">title</span><span class="p">))</span> <span class="ow">in</span> <span class="n">conc_interval</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="p">:</span>
-    <span class="n">dfi</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">l</span><span class="p">:</span><span class="n">r</span><span class="p">]</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-    <span class="n">dfi</span><span class="p">[</span><span class="s1">'feed concentration [g/L]'</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
-    <span class="n">dfi</span><span class="p">[</span><span class="s1">'retentate concentration [g/L]'</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
-    <span class="n">dfi</span><span class="p">[</span><span class="s1">'permeate concentration [g/L]'</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
-    <span class="n">FIRST</span> <span class="o">=</span> <span class="mi">0</span>
-    <span class="n">LAST</span>  <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">dfi</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
-    <span class="n">dfi</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">FIRST</span><span class="p">,</span>      <span class="s1">'feed concentration [g/L]'</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_concentration</span><span class="p">(</span><span class="n">df_conc</span><span class="p">,</span> <span class="n">sample_group</span><span class="o">=</span><span class="n">group</span><span class="p">,</span> <span class="n">initial</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">sample_type</span><span class="o">=</span><span class="s1">'feed'</span><span class="p">)</span>
-    <span class="n">dfi</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">FIRST</span><span class="p">,</span> <span class="s1">'retentate concentration [g/L]'</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_concentration</span><span class="p">(</span><span class="n">df_conc</span><span class="p">,</span> <span class="n">sample_group</span><span class="o">=</span><span class="n">group</span><span class="p">,</span> <span class="n">initial</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">sample_type</span><span class="o">=</span><span class="s1">'retentate'</span><span class="p">)</span>
-    <span class="n">dfi</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">FIRST</span><span class="p">,</span>  <span class="s1">'permeate concentration [g/L]'</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_concentration</span><span class="p">(</span><span class="n">df_conc</span><span class="p">,</span> <span class="n">sample_group</span><span class="o">=</span><span class="n">group</span><span class="p">,</span> <span class="n">initial</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">sample_type</span><span class="o">=</span><span class="s1">'permeate'</span><span class="p">)</span>
-    <span class="n">dfi</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">LAST</span><span class="p">,</span>  <span class="s1">'retentate concentration [g/L]'</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_concentration</span><span class="p">(</span><span class="n">df_conc</span><span class="p">,</span> <span class="n">sample_group</span><span class="o">=</span><span class="n">group</span><span class="p">,</span> <span class="n">initial</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">sample_type</span><span class="o">=</span><span class="s1">'retentate'</span><span class="p">)</span>
-    <span class="n">dfi</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">LAST</span><span class="p">,</span>   <span class="s1">'permeate concentration [g/L]'</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_concentration</span><span class="p">(</span><span class="n">df_conc</span><span class="p">,</span> <span class="n">sample_group</span><span class="o">=</span><span class="n">group</span><span class="p">,</span> <span class="n">initial</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">sample_type</span><span class="o">=</span><span class="s1">'permeate'</span><span class="p">)</span>
-    <span class="c1"># store initial concentration also as a constant column</span>
-    <span class="n">dfi</span><span class="p">[</span><span class="s1">'initial feed concentration [g/L]'</span><span class="p">]</span>         <span class="o">=</span> <span class="n">get_concentration</span><span class="p">(</span><span class="n">df_conc</span><span class="p">,</span> <span class="n">sample_group</span><span class="o">=</span><span class="n">group</span><span class="p">,</span> <span class="n">initial</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">sample_type</span><span class="o">=</span><span class="s1">'feed'</span><span class="p">)</span>
-    <span class="n">dfi</span><span class="p">[</span><span class="s1">'initial retentate concentration [g/L]'</span><span class="p">]</span>    <span class="o">=</span> <span class="n">get_concentration</span><span class="p">(</span><span class="n">df_conc</span><span class="p">,</span> <span class="n">sample_group</span><span class="o">=</span><span class="n">group</span><span class="p">,</span> <span class="n">initial</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">sample_type</span><span class="o">=</span><span class="s1">'retentate'</span><span class="p">)</span>
-    <span class="n">dfi</span><span class="p">[</span><span class="s1">'initial permeate concentration [g/L]'</span><span class="p">]</span>     <span class="o">=</span> <span class="n">get_concentration</span><span class="p">(</span><span class="n">df_conc</span><span class="p">,</span> <span class="n">sample_group</span><span class="o">=</span><span class="n">group</span><span class="p">,</span> <span class="n">initial</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">sample_type</span><span class="o">=</span><span class="s1">'permeate'</span><span class="p">)</span>
-    <span class="c1"># start from t=1</span>
-    <span class="n">dfi</span><span class="p">[</span><span class="s1">'time [m]'</span><span class="p">]</span> <span class="o">=</span> <span class="n">dfi</span><span class="p">[</span><span class="s1">'time [m]'</span><span class="p">]</span> <span class="o">-</span> <span class="n">dfi</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="s1">'time [m]'</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span>
-    <span class="n">out_file_i</span> <span class="o">=</span> <span class="p">(</span><span class="n">out_folder</span> <span class="o">+</span> <span class="n">DATE</span> <span class="o">+</span> <span class="s1">' '</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">group</span><span class="p">)</span> <span class="o">+</span> <span class="s1">' '</span> <span class="o">+</span> <span class="n">title</span> <span class="o">+</span> <span class="s1">'.csv'</span><span class="p">)</span>
-    <span class="c1"># EXPORT according to concentrations</span>
-    <span class="n">dfi</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">out_file_i</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell-outputWrapper">
-<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
-</div>
-<div class="jp-OutputArea jp-Cell-outputArea">
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>splitting df according to different concentrations
-</pre>
-</div>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [24]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="c1"># start from t=1</span>
@@ -8221,7 +7871,21 @@ time [m] included!
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [25]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [19]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">out_file_path</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [20]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="c1">#############################</span>

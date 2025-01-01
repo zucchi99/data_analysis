@@ -2,6 +2,44 @@ from constants import *
 
 fun_k_n = (lambda J, dJ, J_min, n : - dJ / (J**(2-n) * (J - J_min)) )
 
+def partition_column_in_groups(df, series_col='TMP [kPa]', group_col='TMP group', max_distance_from_average=12.5) :
+    cur_group = 0
+    first_value = df[series_col].values[0]
+    #cur_min = first_value
+    #cur_max = first_value
+    mov_avg = first_value
+    df[group_col] = 0
+    for i, row in df.iterrows() : 
+        cur_val = row[series_col]
+        # A) use bounds
+        # cur_min = min(cur_min, cur_val)
+        # cur_max = max(cur_max, cur_val)
+        # B) use moving average
+        mov_avg = (mov_avg + cur_val) / 2
+        if (abs(mov_avg - cur_val) > max_distance_from_average)  :
+            # current data point too far from previous data points
+            #cur_min = cur_val
+            #cur_max = cur_val
+            mov_avg = cur_val
+            cur_group += 1
+        df.loc[i, group_col] = cur_group
+    print(f"added column: '{group_col}', computed by checking if the current point is near the moving average of the previous points (max_distance_from_average={max_distance_from_average})")
+    return df
+
+def generate_concentration_lines(df, x_axis='time [m]') : 
+    conc_shifted = df['initial feed concentration [g/L]'].shift(1)
+    df['changed concentration'] = (df['initial feed concentration [g/L]'] != conc_shifted)
+    df_changed_conc = df[df['changed concentration'] == True][[x_axis, 'initial feed concentration [g/L]']]
+    conc_lines = {}
+    for _, row in df_changed_conc.iterrows() :
+        x = row[x_axis].astype(int)
+        conc = row['initial feed concentration [g/L]']
+        conc_lines[x] = f"feed conc = {conc:.2f} [g/L]"
+    for (k,v) in conc_lines.items() :
+        print(f"{k:4d}: {v}")
+    conc_lines_GREATER_ZERO = { k : v for k, v in conc_lines.items() if v != 'feed conc = 0.00 [g/L]'}
+    return conc_lines, conc_lines_GREATER_ZERO
+
 def get_input_file(in_folder, in_file_idx, log=True) :
     in_files = [ (in_folder, file) for file in sorted(os.listdir(in_folder)) if re.match(".*\.csv", file) ]
     cur_file = in_files[in_file_idx][1]
@@ -27,6 +65,22 @@ def estimate_initial_resistance(df, y_col='res tot est at 20° [1/m]', factors=[
 
 def listdir_by_extension(path, ext='csv') :
     return sorted([f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f)) and re.match(f".*\.{ext}$", f)])
+
+def get_experiment_data(file_name) :
+    df_experiments = pd.read_excel(FILE_EXPERIMENTS_METADATA)
+    cur_file_name = re.sub('.csv', '', file_name)
+    # filter only the current experiment data
+    cur_experiment = df_experiments[df_experiments['data file'] == cur_file_name]
+    check_df_size_after_filter(cur_experiment, FILE_EXPERIMENTS_METADATA, 'experiments')
+    return cur_experiment
+
+def get_membrane_data(cur_experiment) :
+    df_membranes = pd.read_excel(FILE_MEMBRANES_METADATA)
+    membrane_model = cur_experiment['membrane model'].values[0]
+    # filter only the used membrane data
+    cur_membrane = df_membranes[df_membranes['membrane model'] == membrane_model]
+    check_df_size_after_filter(cur_membrane, FILE_MEMBRANES_METADATA, 'memebranes')
+    return cur_membrane
 
 def check_df_size_after_filter(df_filtered, in_file, about) :
     if len(df_filtered) != 1 :
@@ -284,82 +338,107 @@ def add_TMP_levels(df, col='TMP [kPa]', levels=[-math.inf,100,200,300,400,math.i
         l = r
     return df
 
-
-def drop_all_outliers(df, drop_initial_final_off_rows=True, drop_off_rows=True, drop_outliers=True, log=True) :
-    if drop_initial_final_off_rows :
-        df = drop_initial_final_rows(df)
-    args = {}
-    args['log'] = log
-    if drop_off_rows :
-        df_ON, df_OFF = get_df_ON_OFF(df)
-        df = df_ON
-        print(f"dropped {len(df_OFF)} rows after checking machine ON/OFF state during execution")
-        if drop_outliers :
-            df, df_drop1 = remove_outliers(df, cols=['res tot [1/m]'],    drop_fun=drop_outliers_far_median,     args=args)
-            df, df_drop2 = remove_outliers(df, cols=['prs feed_2 [kPa]'], drop_fun=drop_outliers_far_neighbours, args=args)
-            df, df_drop3 = remove_outliers(df, cols=['flux [L/m^2h]'],    drop_fun=drop_outliers_out_range,      args=args)
-            df, df_drop4 = remove_outliers(df, cols=['flux [L/m^2h]'],    drop_fun=drop_initial_jumps)
-            #del(df_drop1, df_drop2, df_drop3, df_drop4)
+def add_column_if_missing(df, c='is_outlier', v=False) : 
+    if not c in df.columns :
+        df[c] = v
     return df
 
+# def find_TMP_groups(df) :
+# TODO
 
-def drop_initial_final_rows(df, MIN_MINUTES_ON=5, log=True) :
-    # remove INITIAL rows until machine in ON for >= 5 min
+def identify_all_outliers(df, drop_outliers=True, log=True) :
+    args = {}
+    args['log'] = log
+    df = invoke__identify_outliers(df, cols=['is_ON'],            drop_fun=indentify_outliers__machine_OFF,    args=args)
+    df = invoke__identify_outliers(df, cols=['res tot [1/m]'],    drop_fun=indentify_outliers__far_median,     args=args)
+    df = invoke__identify_outliers(df, cols=['prs feed_2 [kPa]'], drop_fun=indentify_outliers__far_neighbours, args=args)
+    df = invoke__identify_outliers(df, cols=['flux [L/m^2h]'],    drop_fun=indentify_outliers__out_range,      args=args)
+    #df = invoke__identify_outliers(df, cols=['flux [L/m^2h]'],    drop_fun=indentify_outliers__initial_jumps)
+    if drop_outliers :
+        df = df[df['is_outlier'] == False].reset_index(drop=True)
+    return df
+
+def invoke__identify_outliers(df, drop_fun, cols=['res tot [1/m]'], args:dict={}) :
+    df = add_column_if_missing(df)
+    log = args.get('log', True)
+    n_bef = len(df[df['is_outlier'] == True])
+    for c in cols :
+        args['column'] = c
+        df = drop_fun(df, args)
+        n_aft = len(df[df['is_outlier'] == True])
+        n_new = n_aft - n_bef
+        if log and n_new > 0:
+            print(f'found {n_new} new outliers after checking column {c} by function {drop_fun.__name__}')
+            print("total number of outliers:", n_bef, "->", n_aft)
+        n_bef = n_aft
+    return df
+
+def indentify_outliers__machine_OFF(df, args:dict={}) :
+    MIN_MINUTES_ON = args.get('MIN_MINUTES_ON', 5)
+    df = add_column_if_missing(df)
+    # define as outliers all INITIAL rows until the machine is ON for >= 5 min
     counter = 0
     i = 0
-    MIN_MINUTES_ON
     while (counter < MIN_MINUTES_ON and i < len(df)) :
         counter = (counter + 1) if (df.loc[i, 'is_ON'] == True) else 0
         i += 1
-    new_idx = i - counter
-    if (new_idx > 0) :
-        df = (df[new_idx:]).reset_index(drop=True)
-    if log :
-        print(f"dropped {new_idx} rows after checking machine ON/OFF state at start")
-    # remove FINAL rows until machine in ON for >= 5 min
+    outliers = list(range(0, i - counter))
+    df.loc[outliers, 'is_outlier'] = True
+    # define as outliers all FINAL rows since machine is not ON for >= 5 min
     counter = 0
     i = 0
     while (counter < MIN_MINUTES_ON and i < len(df)) :
         counter = (counter + 1) if (df.loc[len(df)-i-1, 'is_ON'] == True) else 0
         i += 1
-    new_idx = i - counter
-    if (new_idx > 0) :
-        df = (df[:-new_idx]).reset_index(drop=True)
-    if log :
-        print(f"dropped {new_idx} rows after checking machine ON/OFF state at end")
+    outliers = list(range(len(df) - i + counter, len(df)))
+    df.loc[outliers, 'is_outlier'] = True
+    # define as outliers any OFF row
+    df['is_outlier'] = ((df['is_outlier']) | (~df['is_ON']))
     return df
 
-def get_df_ON_OFF(df) :
-    df_ON  = (df[df['is_ON'] == True]).reset_index(drop=True)
-    df_OFF = (df[df['is_ON'] == False]).reset_index(drop=True)
-    return df_ON, df_OFF
+#def indentify_outliers__initial_jumps(df, c, args:dict={}) :
+#    until = args.get('until', 2)
+#    max_ratio = args.get('max ratio', 1.2)
+#    i = 0
+#    idx = -1
+#    for i in range(until) :
+#        cur = abs(df.loc[i, c])
+#        nxt = abs(df.loc[i+1, c])
+#        if max(cur, nxt) / min(cur, nxt) > max_ratio :
+#            idx = i
+#        i += 1
+#    # if idx == -1 then to_drop=[] otherwise to_drop=[0,..,idx+1]
+#    to_drop = [ i for i in range(0, idx+1)]
+#    return df, to_drop 
 
-def drop_initial_jumps(df, c, args:dict={}) :
-    until = args.get('until', 2)
-    max_ratio = args.get('max ratio', 1.2)
-    i = 0
-    idx = -1
-    for i in range(until) :
-        cur = abs(df.loc[i, c])
-        nxt = abs(df.loc[i+1, c])
-        if max(cur, nxt) / min(cur, nxt) > max_ratio :
-            idx = i
-        i += 1
-    # if idx == -1 then to_drop=[] otherwise to_drop=[0,..,idx+1]
-    to_drop = [ i for i in range(0, idx+1)]
-    return df, to_drop 
-
-def drop_outliers_out_range(df, c, args:dict={}) :
+def indentify_outliers__out_range(df, args:dict={}) :
+    c = args['column']
     min = args.get('min', 0)
     max = args.get('max', math.inf)
-    to_drop = df[(df[c] < min) | (df[c] > max)].index
-    return df, to_drop
-    
-def drop_outliers_far_neighbours(df, c, args:dict={}) :
+    df['is_outlier'] = ((df['is_outlier']) | (df[c] < min) | (df[c] > max))
+    return df
+
+def get_outliers_free_df(df) :
+    # use only the clean dataset to seek for outliers 
+    df_bckp = df
+    df = df[df['is_outlier'] == False].reset_index()
+    return df_bckp, df
+
+def restore_previous_index(df, index_col='level_0', drop_index_col=True) :
+    # restore previous index
+    df.index = df[index_col]
+    df.index.name = None
+    if drop_index_col :
+        df = df.drop(columns=[index_col])
+    return df
+
+def indentify_outliers__far_neighbours(df, args:dict={}) :
+    df_bckp, df = get_outliers_free_df(df)
+    # seek for outliers 
+    c = args['column']
     interval = args.get('interval', 5)
     max_ratio = args.get('max ratio', 1.25)
     half_int = int(interval/2)
-    to_drop = []
     for i in range(half_int, len(df)-half_int) :
         left_median = abs(stats.median(df[c][i-half_int:i]))
         right_median = abs(stats.median(df[c][i+1:i+half_int+1]))
@@ -367,10 +446,18 @@ def drop_outliers_far_neighbours(df, c, args:dict={}) :
         if (x < left_median and x < right_median) or (x > left_median and x > right_median) :
             if (max(x, left_median) / min(x, left_median) > max_ratio) and (max(x, right_median) / min(x, right_median) > max_ratio) :
                 #print(f"to drop: {i}, l_median: {left_median}, r_median: {right_median}, value: {x}")
-                to_drop.append(i)
-    return df, to_drop 
+                df.loc[i, 'is_outlier'] = True
+    df = restore_previous_index(df)
+    # add the new found outliers to the original df
+    df_bckp['is_outlier'] = (df_bckp['is_outlier'] | df['is_outlier'])
+    return df_bckp
 
-def drop_outliers_far_median(df, c, args:dict={}) :
+def indentify_outliers__far_median(df, args:dict={}) :
+    # use only the clean dataset to seek for outliers 
+    df_bckp = df
+    df = df[df['is_outlier'] == False]
+    # seek for outliers 
+    c = args['column']
     group_by_col = args.get('group_by', None) # default: None
     max_ratio    = args.get('max ratio', 100) # default: 100
     groups = [1] # default only one group
@@ -382,21 +469,13 @@ def drop_outliers_far_median(df, c, args:dict={}) :
             median = df[df[group_by_col] == g][[group_by_col, c]].groupby(group_by_col).median().values[0][0]
         df[f'abs({c})'] = abs(df[c])
         df['to_drop'] = df[f'abs({c})'].apply(lambda x : (max(x, median) / min(x, median)) > max_ratio)
-        to_drop = df[(df['to_drop'] == True)].index
         if group_by_col is not None :
-            to_drop = df[(df['to_drop'] == True) & (df[group_by_col] == g)].index
+            df['to_drop'] = ((df['to_drop']) & (df[group_by_col] == g))
+        df['is_outlier'] = ((df['is_outlier']) | (df['to_drop']))
         df = df.drop(columns=[f'abs({c})', 'to_drop'])
-    return df, to_drop
-
-def remove_outliers(df, cols=['res tot [1/m]'], drop_fun=drop_outliers_far_median, args:dict={}) :
-    log = args.get('log', True)
-    for c in cols :
-        df, to_drop = drop_fun(df, c, args)
-        df_drop = df.loc[to_drop, :]
-        df = df.drop(labels=to_drop, axis=0).reset_index(drop=True)
-        if log:
-            print(f'dropped {len(df_drop)} rows after checking outliers on column {c} by function {drop_fun.__name__}')
-    return df, df_drop
+    # add the new found outliers to the original df
+    df_bckp['is_outlier'] = (df_bckp['is_outlier'] | df['is_outlier'])
+    return df_bckp
 
 def get_concentration_lines(df, time_col, conc_col='initial feed concentration [g/L]', conc_type='feed', log=True) :
     conc_shifted = df[conc_col].shift(1)
@@ -415,7 +494,6 @@ def get_concentration_lines(df, time_col, conc_col='initial feed concentration [
 
 def call_linear_model(x, y, fit_intercept=True, summary=True, check_vif=True) :
     if check_vif :
-        print("Variance Inflation Factor (VIF)")
         factors = x.columns
         MAX_LEN = max([ len(c) for c in factors])
         if len(factors) > 1 :
@@ -429,9 +507,10 @@ def call_linear_model(x, y, fit_intercept=True, summary=True, check_vif=True) :
                     warn = 'Some multicollinearity'
                 else :
                     warn = 'No multicollinearity at all'
+                print("Variance Inflation Factor (VIF)")
                 print(f" - {c:<{MAX_LEN}} -> {vif:5.2f} ==> {warn}")
-        else :
-            print(f" - The model has just one variable, {factors[0]}, thus there can't be multicollinerity.")
+        #else :
+            #print(f" - The model has just one variable, {factors[0]}, thus there can't be multicollinerity.")
         print()
 
     constant_already_present = False
@@ -468,7 +547,37 @@ def smooth_data_lowess(x, y, pct):
     #frac = (5*span / len(y))
     return sm.nonparametric.lowess(y, x, frac=pct, return_sorted=False)
 
-def plot_time_series_subplots(x_series, y_ss, y_ax_lbl, title, x_format=None, s=3, figsize=(20,7), rows=1, cols=1, concentration_lines=None):
+def add_cross_flow_velocity_and_estimated_retentate_flow(df, file_name) :
+    # CALCULATING CROSSFLOW VELOCITY 
+    # TODO CHECK CORRECTNESS OF COMPUTATION !
+    cur_experiment = get_experiment_data(file_name)
+    cur_membrane   = get_membrane_data(cur_experiment)
+    # input data
+    mbn_num         = cur_experiment['number of membranes used'].values[0]
+    mbn_channels    = cur_membrane['number of channels'].values[0]
+    mbn_channel_dim = cur_membrane['channel dimension [m]'].values[0]
+    mbn_section     = mbn_channels * mbn_num * (mbn_channel_dim/2)**2 * math.pi
+    mbn_diam        = mbn_num * cur_membrane['diameter [m]'].values[0]
+    mbn_len         = cur_membrane['length [m]'].values[0]
+    # output columns
+    vlct_crsflow    = 'vlct crsflow [m/s]'
+    est_flow        = 'flow retentate est by vlct crsflow [L/h]'
+    # computation
+    df[vlct_crsflow] = (df['flow feed [L/h]'] / (1000 * 3600.0)) / mbn_section
+    df[est_flow]     = 1.25 * 0.25 * math.pi * (3600 * df[vlct_crsflow]) * mbn_diam**2 * mbn_len * mbn_channels * mbn_num
+    print(f"added column: '{vlct_crsflow}', estimated using a formula based on membranes data and feed flow")
+    print(f"added column: '{est_flow}', estimated by using a formula based on membranes data and cross-flow velocity")
+    return df
+
+def add_estimate_retentate_pressure(df, target_col='prs retentate [kPa]', group_by_cols=['TMP group']) :
+    # estimate the retentate pressure using the median value of each TMP group
+    target_col_est = re.sub(r'(\[.*\])$', r'est \1', target_col)
+    df_tmp = pd.DataFrame(df[group_by_cols + [target_col]].groupby(group_by_cols).median()[target_col]).reset_index().rename(columns={target_col : target_col_est})
+    df = df.join(df_tmp.set_index(group_by_cols), on=group_by_cols)
+    print(f"added column: '{target_col_est}', estimated by taking the median value of its group")
+    return df
+
+def plot_time_series_subplots(x_series, y_ss, y_ax_lbl, title, x_format=None, s=3, figsize=(20,7), rows=1, cols=1, concentration_lines=None, is_outlier=None):
     fig, axs = plot.subplots(rows, cols, figsize=figsize)
     plot.title(title)
     i = 0
@@ -483,24 +592,26 @@ def plot_time_series_subplots(x_series, y_ss, y_ax_lbl, title, x_format=None, s=
         cur_ax.set_title(chart_title)
         k = 0
         for (y_legend, y) in y_series.items() :
-            plot_time_series(x, y, y_legend, x_format=x_format, s=s, cur_ax=cur_ax, color=COLOR_CYCLE[k], grid=True, concentration_lines=concentration_lines)
+            plot_time_series(x, y, y_legend, x_format=x_format, s=s, cur_ax=cur_ax, color=COLOR_CYCLE[k], grid=True, concentration_lines=concentration_lines, is_outlier=is_outlier)
             concentration_lines=None
             k += 1
             cur_ax.legend()
         
 
-def plot_time_series_2_axis(x, y_series, x_ax_lbl, y_ax_lbl, title, x_format=None, secondary_y=[], s=3, figsize=(20,7), color=COLOR_CYCLE, loc='best', concentration_lines=None):
+def plot_time_series_2_axis(x, y_series, x_ax_lbl, y_ax_lbl, title, x_format=None, secondary_y=[], s=3, figsize=(20,7), color=COLOR_CYCLE, loc='best', concentration_lines=None, is_outlier=None):
     fig, ax1 = plot.subplots(figsize=figsize)
     ax2 = ax1.twinx()
     i = 0
     j = 0
     for (y_legend, y) in y_series.items() :
         cur_ax = ax2 if (y_legend in secondary_y) else ax1
-        plot_time_series(x, y, y_legend, x_format=x_format, s=s, cur_ax=cur_ax, color=color[i], grid=(cur_ax == ax1 and j == 0), concentration_lines=concentration_lines)
+        plot_time_series(x, y, y_legend, x_format=x_format, s=s, cur_ax=cur_ax, color=color[i], grid=(cur_ax == ax1 and j == 0), concentration_lines=concentration_lines, is_outlier=is_outlier)
         concentration_lines=None
         i += 1
         if cur_ax == ax1 :
             j += 1
+    if is_outlier is not None :
+        ax2.plot([], [], linestyle='', color='black', marker='x', markersize=s+2, label='outlier')
     h1, l1 = ax1.get_legend_handles_labels()
     h2, l2 = ax2.get_legend_handles_labels()
     ax1.legend(h1+h2, l1+l2, loc=loc)
@@ -510,14 +621,16 @@ def plot_time_series_2_axis(x, y_series, x_ax_lbl, y_ax_lbl, title, x_format=Non
     plot.title(title)
     return ax1, ax2
 
-def plot_time_series_1_axis(x, y_series, x_ax_lbl, y_ax_lbl, title, x_format=None, s=3, figsize=(20,7), cur_ax=plot, color=COLOR_CYCLE, concentration_lines=None):
+def plot_time_series_1_axis(x, y_series, x_ax_lbl, y_ax_lbl, title, x_format=None, s=3, figsize=(20,7), cur_ax=plot, color=COLOR_CYCLE, concentration_lines=None, is_outlier=None):
     i = 0
     if cur_ax == plot and figsize is not None:
         plot.figure(figsize=figsize)
     for (y_legend, y) in y_series.items() :
-        plot_time_series(x, y, y_legend, x_format=x_format, s=s, cur_ax=cur_ax, color=color[i], grid=(i == 0), concentration_lines=concentration_lines)
+        plot_time_series(x, y, y_legend, x_format=x_format, s=s, cur_ax=cur_ax, color=color[i], grid=(i == 0), concentration_lines=concentration_lines, is_outlier=is_outlier)
         i += 1
         concentration_lines=None
+    if is_outlier is not None :
+        cur_ax.plot([], [], linestyle='', color='black', marker='x', markersize=s+2, label='outlier')
     if cur_ax == plot :
         if (len(y_series) > 1) :
             plot.legend()
@@ -532,13 +645,23 @@ def plot_time_series_1_axis(x, y_series, x_ax_lbl, y_ax_lbl, title, x_format=Non
         cur_ax.set_title(title)
     return cur_ax
 
-def plot_time_series(x, y, y_legend, x_format=None, s=3, cur_ax=plot, color=COLOR_CYCLE[0], grid=True, concentration_lines=None) :        
+#def add_outlier_patch_legend(ax) :
+#    Patch = matplotlib.patches.Patch
+#    handles, labels = ax.get_legend_handles_labels()
+#    labels.append('outlier')
+#    handles.append(Patch(color='black', marker='x'))  
+#    ax.legend(handles=[red_patch])
+
+def plot_time_series(x, y, y_legend, x_format=None, s=3, cur_ax=plot, color=COLOR_CYCLE[0], grid=True, concentration_lines=None, is_outlier=None) :
     if concentration_lines is not None :
         i = len(COLOR_CYCLE) - 1
         for (line_x,lbl) in concentration_lines.items() :
             cur_ax.axvline(x=line_x, label=lbl, color=COLOR_CYCLE[i], linewidth=3)
             i -= 1
     cur_ax.plot(x, y, label=y_legend, linestyle='--', marker='o', color=color, markersize=s)
+    if is_outlier is not None :
+        df_clean = pd.DataFrame(data={'x' : x, 'y': y, 'is_outlier': is_outlier})[is_outlier == True]
+        cur_ax.plot(df_clean['x'], df_clean['y'], linestyle='', marker='x', color='black', markersize=s+2)
     if x_format != None :
         xformatter = mdates.DateFormatter(x_format)
         tmp = (cur_ax.gcf().axes[0]) if cur_ax == plot else cur_ax
