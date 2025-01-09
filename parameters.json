@@ -1,11 +1,9 @@
 {
   "x_axis": "time [m]",
-  "file_idx_uppaal": 0,
-  "file_idx": 0,
+  "file_idx_uppaal": 1,
+  "file_idx": 1,
   "tmp_idx": 0,
   "log": true,
-  "reset_columns_when_OFF": true,
-  "drop_outliers": true,
   "plot_scatterplot_matrix": false,
   "use_default_arima_params": true,
   "default_arima_params": [
@@ -14,7 +12,6 @@
     0
   ],
   "include_arima_simulations_in_analysis": true,
-  "drop_off_rows": true,
-  "include_outliers": true,
+  "include_outliers": false,
   "mark_outliers": true
 }
