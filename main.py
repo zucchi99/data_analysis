@@ -36,7 +36,7 @@ input_data_path = {
 def merge_data_files() :
     df_all = pd.DataFrame()
     i = 0
-    output_file = 'ALL_DATA.csv'
+    output_file = ALL_DATA_FILE
     output_file_path = f"{PATH_SENSORS_DATA_EXT_UF_V1}/{output_file}"
     for f in listdir_by_extension(PATH_SENSORS_DATA_EXT_UF_V1) :
         if (not f in [output_file]) : 
@@ -44,19 +44,20 @@ def merge_data_files() :
             f = PATH_SENSORS_DATA_EXT_UF_V1 + '/' + f
             df_cur = pd.read_csv(f)
             # drop outliers
-            if drop_initial_final_off_rows :
-                df_cur = drop_initial_final_rows(df_cur, log=False)
-                df_cur, _ = get_df_ON_OFF(df_cur)
-            if drop_off_rows :
-                args = { 'log' : False }
-                if drop_outliers :
-                    df_cur, _ = remove_outliers(df_cur, cols=['res tot [1/m]'],    drop_fun=drop_outliers_far_median, args=args)
-                    df_cur, _ = remove_outliers(df_cur, cols=['prs feed_2 [kPa]'], drop_fun=drop_outliers_far_neighbours, args=args)
-                    df_cur, _ = remove_outliers(df_cur, cols=['flux [L/m^2h]'],    drop_fun=drop_outliers_out_range, args=args)
-                    df_cur, _ = remove_outliers(df_cur, cols=['flux [L/m^2h]'],    drop_fun=drop_initial_jumps, args=args)
+            include_outliers = params['include_outliers']
+            df_cur = identify_all_outliers(df_cur, drop_outliers=(not include_outliers), log=True)
+            df_cur = identify_TMP_groups(
+                df_cur, series_col='TMP [kPa]', group_col='TMP group', drop_outliers=(not include_outliers), log=True,
+                max_distance_from_average=MAX_DISTANCE_FROM_TMP_AVERAGE, min_size=MIN_OBSERVATIONS_PER_TMP_GROUP)
             # concatenate
             df_cur['file_idx'] = i
             #df_cur.loc[len(df_cur)] = empty_separator_row
+            # reset time
+            cur_min_time = df_cur['time [m]'].min()
+            df_cur['time [m]'] = df_cur['time [m]'] - cur_min_time + 1
+            if not df_all.empty : 
+                all_max_time = df_all['time [m]'].max()
+                df_cur['time [m]'] = df_cur['time [m]'] + all_max_time
             df_all = pd.concat([df_all, df_cur])
             i += 1
     df_all = df_all.drop('index', axis=1).reset_index(drop=True)
@@ -73,7 +74,7 @@ def merge_data_files() :
         #print(f'files: {file_prv} -> {file_cur}, group: {group_prv} -> {group_cur}, new_group:{new_group}')
     df_all = df_all.drop('TMP group', axis=1).rename(columns={'new group' : 'TMP group'})
     # write to file
-    df_all.to_csv(output_file_path, index=False)
+    df_all.to_csv(output_file_path, index_label='index')
 
 def update_parameters_json(args=DEFAULT_PARAMETERS) :
     with open(FILE_PARAMETERS, 'w') as fid:
@@ -117,7 +118,7 @@ def run_all() :
                     continue
             # one execution per file and per tmp
             if notebook in ['4_simulate_flux_ARIMA'] :
-                if f_input != 'ALL_DATA.csv' :
+                if f_input != ALL_DATA_FILE :
                     tmps_idxs = TMP_INTERVALS[f_input]
                     k = 0
                     for (tmp_idx, cur_idxs) in tmps_idxs.items() :
@@ -135,8 +136,8 @@ def run_all() :
             else :
                 update_parameters_json(params)
                 run_notebook(f_ipynb, f_html)
-        #if notebook == '0_extend__df_raw' :
-        #    merge_data_files()
+        if notebook == '0_extend__df_raw' :
+            merge_data_files()
         j += 1
 
 def run_notebook(notebook_file, output_file):
