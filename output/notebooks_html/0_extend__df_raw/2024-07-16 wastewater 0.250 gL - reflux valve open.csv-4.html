@@ -7551,14 +7551,11 @@ file_idx_uppaal: 4
 file_idx: 4
 tmp_idx: 0
 log: True
-reset_columns_when_OFF: True
-drop_outliers: True
 plot_scatterplot_matrix: False
 use_default_arima_params: True
 default_arima_params: [1, 1, 0]
 include_arima_simulations_in_analysis: True
-drop_off_rows: True
-include_outliers: True
+include_outliers: False
 mark_outliers: True
 </pre>
 </div>
@@ -7774,10 +7771,11 @@ output file:
 <div class="highlight hl-ipython3"><pre><span></span><span class="c1"># add bool flag when machine is ON</span>
 <span class="n">df</span><span class="p">[</span><span class="s1">'is_ON'</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">'TMP [kPa]'</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mi">5</span>
 <span class="c1"># reset to zero flux, flow, and resistance columns when the machine is OFF (TMP &lt; 5)</span>
-<span class="c1"># for c in df.columns :</span>
-<span class="c1">#     if re.match("^(flow)|(flux)|(res).*", c) :</span>
-<span class="c1">#         #print(f" - {c}")</span>
-<span class="c1">#         df[c] = df.apply(reset_cols_if_is_OFF, axis=1, args=('is_ON', c))</span>
+<span class="c1"># if reset_columns_when_OFF:</span>
+<span class="c1">#   for c in df.columns :</span>
+<span class="c1">#         if re.match("^(flow)|(flux)|(res).*", c) :</span>
+<span class="c1">#             #print(f" - {c}")</span>
+<span class="c1">#           df[c] = df.apply(reset_cols_if_is_OFF, axis=1, args=('is_ON', c))</span>
 </pre></div>
 </div>
 </div>
@@ -7856,7 +7854,7 @@ output file:
 <div class="jp-InputPrompt jp-InputArea-prompt">In [18]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">out_file_path</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">out_file_path</span><span class="p">,</span><span class="n">index_label</span><span class="o">=</span><span class="s1">'index'</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>

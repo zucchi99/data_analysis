@@ -2,7 +2,25 @@ from constants import *
 
 fun_k_n = (lambda J, dJ, J_min, n : - dJ / (J**(2-n) * (J - J_min)) )
 
-def partition_column_in_groups(df, series_col='TMP [kPa]', group_col='TMP group', max_distance_from_average=12.5) :
+def identify_TMP_groups(df, series_col='TMP [kPa]', group_col='TMP group', log=True, drop_outliers=False, max_distance_from_average=MAX_DISTANCE_FROM_TMP_AVERAGE, min_size=MIN_OBSERVATIONS_PER_TMP_GROUP) : 
+    df = partition_column_in_groups(df, series_col=series_col, group_col=group_col, max_distance_from_average=max_distance_from_average)
+    observations_per_group = count_observations_per_group(df, group_col)
+    df[group_col] = df.apply(lambda x : x[group_col] if observations_per_group[x[group_col]] >= min_size else np.nan, axis=1)
+    args = {}
+    args['log'] = log
+    df = invoke__identify_outliers(df, cols=['TMP group'], drop_fun=identify_outliers__nan_column, args=args)
+    if drop_outliers :
+        df = delete_outliers(df, log=log)
+    return df
+
+def delete_outliers(df, log=True) :
+    if log :
+        n = len(df[df['is_outlier']])
+        print(f"dropped all outliers.")
+        print(" - total number of outliers:", n, "->", 0)
+    return df[df['is_outlier'] == False].reset_index(drop=True)
+
+def partition_column_in_groups(df, series_col='TMP [kPa]', group_col='TMP group', max_distance_from_average=MAX_DISTANCE_FROM_TMP_AVERAGE) :
     cur_group = 0
     first_value = df[series_col].values[0]
     #cur_min = first_value
@@ -35,6 +53,7 @@ def generate_concentration_lines(df, x_axis='time [m]') :
         x = row[x_axis].astype(int)
         conc = row['initial feed concentration [g/L]']
         conc_lines[x] = f"feed conc = {conc:.2f} [g/L]"
+    print(f"feed concentrations found ({x_axis}: concentration)")
     for (k,v) in conc_lines.items() :
         print(f"{k:4d}: {v}")
     conc_lines_GREATER_ZERO = { k : v for k, v in conc_lines.items() if v != 'feed conc = 0.00 [g/L]'}
@@ -343,22 +362,18 @@ def add_column_if_missing(df, c='is_outlier', v=False) :
         df[c] = v
     return df
 
-# def find_TMP_groups(df) :
-# TODO
-
-def identify_all_outliers(df, drop_off_rows=True, drop_outliers=True, log=True) :
+def identify_all_outliers(df, drop_outliers=True, log=True) :
     args = {}
     args['log'] = log
-    df = invoke__identify_outliers(df, cols=['is_ON'],            drop_fun=indentify_outliers__machine_OFF,    args=args)
-    df = invoke__identify_outliers(df, cols=['res tot [1/m]'],    drop_fun=indentify_outliers__far_median,     args=args)
-    df = invoke__identify_outliers(df, cols=['prs feed_2 [kPa]'], drop_fun=indentify_outliers__far_neighbours, args=args)
-    df = invoke__identify_outliers(df, cols=['flux [L/m^2h]'],    drop_fun=indentify_outliers__out_range,      args=args)
-    #df = invoke__identify_outliers(df, cols=['flux [L/m^2h]'],    drop_fun=indentify_outliers__initial_jumps)
-    if drop_off_rows :
-        df = df[df['is_ON'] == True].reset_index(drop=True)
+    df = invoke__identify_outliers(df, cols=['is_ON'],            drop_fun=identify_outliers__machine_OFF,    args=args)
+    df = invoke__identify_outliers(df, cols=['res tot [1/m]'],    drop_fun=identify_outliers__far_median,     args=args)
+    df = invoke__identify_outliers(df, cols=['prs feed_2 [kPa]'], drop_fun=identify_outliers__far_neighbours, args=args)
+    df = invoke__identify_outliers(df, cols=['flux [L/m^2h]'],    drop_fun=identify_outliers__out_range,      args=args)
+    #df = invoke__identify_outliers(df, cols=['flux [L/m^2h]'],    drop_fun=identify_outliers__initial_jumps)
+    #if drop_off_rows :
+    #    df = df[df['is_ON'] == True].reset_index(drop=True)
     if drop_outliers :
-        # note: outliers include also off rows
-        df = df[df['is_outlier'] == False].reset_index(drop=True)
+        df = delete_outliers(df, log=log)
     return df
 
 def invoke__identify_outliers(df, drop_fun, cols=['res tot [1/m]'], args:dict={}) :
@@ -372,11 +387,20 @@ def invoke__identify_outliers(df, drop_fun, cols=['res tot [1/m]'], args:dict={}
         n_new = n_aft - n_bef
         if log and n_new > 0:
             print(f'found {n_new} new outliers after checking column {c} by function {drop_fun.__name__}')
-            print("total number of outliers:", n_bef, "->", n_aft)
+            print(" - total number of outliers:", n_bef, "->", n_aft)
         n_bef = n_aft
     return df
 
-def indentify_outliers__machine_OFF(df, args:dict={}) :
+def count_observations_per_group(df, col) :
+    return df.groupby(col)[col].count()
+
+def identify_outliers__nan_column(df, args:dict={}) :
+    col      = args['column']
+    df = add_column_if_missing(df)
+    df['is_outlier'] = df.apply(lambda x : True if np.isnan(x[col]) else x['is_outlier'], axis=1)
+    return df
+
+def identify_outliers__machine_OFF(df, args:dict={}) :
     MIN_MINUTES_ON = args.get('MIN_MINUTES_ON', 5)
     df = add_column_if_missing(df)
     # define as outliers all INITIAL rows until the machine is ON for >= 5 min
@@ -399,7 +423,7 @@ def indentify_outliers__machine_OFF(df, args:dict={}) :
     df['is_outlier'] = ((df['is_outlier']) | (~df['is_ON']))
     return df
 
-#def indentify_outliers__initial_jumps(df, c, args:dict={}) :
+#def identify_outliers__initial_jumps(df, c, args:dict={}) :
 #    until = args.get('until', 2)
 #    max_ratio = args.get('max ratio', 1.2)
 #    i = 0
@@ -414,20 +438,20 @@ def indentify_outliers__machine_OFF(df, args:dict={}) :
 #    to_drop = [ i for i in range(0, idx+1)]
 #    return df, to_drop 
 
-def indentify_outliers__out_range(df, args:dict={}) :
+def identify_outliers__out_range(df, args:dict={}) :
     c = args['column']
     min = args.get('min', 0)
     max = args.get('max', math.inf)
     df['is_outlier'] = ((df['is_outlier']) | (df[c] < min) | (df[c] > max))
     return df
 
-def get_outliers_free_df(df) :
+def get_outliers_free_df(df, index_col='index_bckp') :
     # use only the clean dataset to seek for outliers 
     df_bckp = df
-    df = df[df['is_outlier'] == False].reset_index()
+    df = df[df['is_outlier'] == False].reset_index(names=index_col)
     return df_bckp, df
 
-def restore_previous_index(df, index_col='level_0', drop_index_col=True) :
+def restore_previous_index(df, index_col='index_bckp', drop_index_col=True) :
     # restore previous index
     df.index = df[index_col]
     df.index.name = None
@@ -435,13 +459,13 @@ def restore_previous_index(df, index_col='level_0', drop_index_col=True) :
         df = df.drop(columns=[index_col])
     return df
 
-def indentify_outliers__far_neighbours(df, args:dict={}) :
+def identify_outliers__far_neighbours(df, args:dict={}) :
     df_bckp, df = get_outliers_free_df(df)
     # seek for outliers 
     c = args['column']
-    interval = args.get('interval', 5)
+    interval  = args.get('interval', 5)
     max_ratio = args.get('max ratio', 1.25)
-    half_int = int(interval/2)
+    half_int  = int(interval/2)
     for i in range(half_int, len(df)-half_int) :
         left_median = abs(stats.median(df[c][i-half_int:i]))
         right_median = abs(stats.median(df[c][i+1:i+half_int+1]))
@@ -455,7 +479,7 @@ def indentify_outliers__far_neighbours(df, args:dict={}) :
     df_bckp['is_outlier'] = (df_bckp['is_outlier'] | df['is_outlier'])
     return df_bckp
 
-def indentify_outliers__far_median(df, args:dict={}) :
+def identify_outliers__far_median(df, args:dict={}) :
     # use only the clean dataset to seek for outliers 
     df_bckp = df
     df = df[df['is_outlier'] == False]

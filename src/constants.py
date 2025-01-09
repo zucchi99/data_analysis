@@ -145,20 +145,22 @@ TMP_INTERVALS = {
     }
 }
 
+ALL_DATA_FILE = 'ALL_DATA.csv'
+
 DEFAULT_PARAMETERS = {
     "x_axis" : "time [m]",
     "file_idx_uppaal" : 0,
     "file_idx" : 0,
     "tmp_idx" : 0,
     "log" : True,
-    "reset_columns_when_OFF" : True,
-    "drop_outliers" : True,
+    #"reset_columns_when_OFF" : True,
+    #"drop_off_rows" : True,
+    #"drop_outliers" : True,
     "plot_scatterplot_matrix" : False,
     "use_default_arima_params": True,
     "default_arima_params": (1,1,0),
     "include_arima_simulations_in_analysis": True,
-    "drop_off_rows" : True,
-    "include_outliers" : True,
+    "include_outliers" : False,
     "mark_outliers" : True
 }
 
@@ -207,3 +209,6 @@ MAX_RES = 1e15
 
 # normalize flux at a constant TMP value
 CONST_TMP = 330
+
+MIN_OBSERVATIONS_PER_TMP_GROUP=5
+MAX_DISTANCE_FROM_TMP_AVERAGE=12.5
