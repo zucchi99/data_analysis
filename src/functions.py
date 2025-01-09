@@ -524,6 +524,7 @@ def call_linear_model(x, y, fit_intercept=True, summary=True, check_vif=True) :
         factors = x.columns
         MAX_LEN = max([ len(c) for c in factors])
         if len(factors) > 1 :
+            print("Variance Inflation Factor (VIF)")
             for i in range(len(factors)) :
                 c = factors[i]
                 vif = outliers_influence.variance_inflation_factor(x, i)
@@ -534,7 +535,6 @@ def call_linear_model(x, y, fit_intercept=True, summary=True, check_vif=True) :
                     warn = 'Some multicollinearity'
                 else :
                     warn = 'No multicollinearity at all'
-                print("Variance Inflation Factor (VIF)")
                 print(f" - {c:<{MAX_LEN}} -> {vif:5.2f} ==> {warn}")
         #else :
             #print(f" - The model has just one variable, {factors[0]}, thus there can't be multicollinerity.")
@@ -619,7 +619,7 @@ def plot_time_series_subplots(x_series, y_ss, y_ax_lbl, title, x_format=None, s=
         cur_ax.set_title(chart_title)
         k = 0
         for (y_legend, y) in y_series.items() :
-            plot_time_series(x, y, y_legend, x_format=x_format, s=s, cur_ax=cur_ax, color=COLOR_CYCLE[k], grid=True, concentration_lines=concentration_lines, is_outlier=is_outlier)
+            plot_time_series(x, y, y_legend, x_format=x_format, s=s, cur_ax=cur_ax, color=COLOR_CYCLE[k % len(COLOR_CYCLE)], grid=True, concentration_lines=concentration_lines, is_outlier=is_outlier)
             concentration_lines=None
             k += 1
             cur_ax.legend()
@@ -632,7 +632,7 @@ def plot_time_series_2_axis(x, y_series, x_ax_lbl, y_ax_lbl, title, x_format=Non
     j = 0
     for (y_legend, y) in y_series.items() :
         cur_ax = ax2 if (y_legend in secondary_y) else ax1
-        plot_time_series(x, y, y_legend, x_format=x_format, s=s, cur_ax=cur_ax, color=color[i], grid=(cur_ax == ax1 and j == 0), concentration_lines=concentration_lines, is_outlier=is_outlier)
+        plot_time_series(x, y, y_legend, x_format=x_format, s=s, cur_ax=cur_ax, color=color[i % len(color)], grid=(cur_ax == ax1 and j == 0), concentration_lines=concentration_lines, is_outlier=is_outlier)
         concentration_lines=None
         i += 1
         if cur_ax == ax1 :
@@ -653,7 +653,7 @@ def plot_time_series_1_axis(x, y_series, x_ax_lbl, y_ax_lbl, title, x_format=Non
     if cur_ax == plot and figsize is not None:
         plot.figure(figsize=figsize)
     for (y_legend, y) in y_series.items() :
-        plot_time_series(x, y, y_legend, x_format=x_format, s=s, cur_ax=cur_ax, color=color[i], grid=(i == 0), concentration_lines=concentration_lines, is_outlier=is_outlier)
+        plot_time_series(x, y, y_legend, x_format=x_format, s=s, cur_ax=cur_ax, color=color[i % len(color)], grid=(i == 0), concentration_lines=concentration_lines, is_outlier=is_outlier)
         i += 1
         concentration_lines=None
     if is_outlier is not None :
